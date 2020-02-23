@@ -1,0 +1,251 @@
+---
+title: "class1-d"
+author: "Sujatha Jagannathan"
+date: "February 24, 2020"
+output: ioslides_presentation
+incremental: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=40))
+knitr::opts_knit$set(root.dir = "/Users/jagannas/Downloads/molb7910-master")
+```
+<br/>
+
+## 1. Preparing R
+Load packages  
+```{r, include = TRUE, warning=FALSE, message=FALSE}
+library("tidyverse")
+```
+This should install readr, tidyr, dplyr, purr, stringr, ggplot2, tibble, and forcats.
+<br/>
+
+## 2. Importing data
+
+In base R, we use `read.table`, `read.csv`, `read.delim`, etc. to import data. The problem with these functions is that they often coerce characters and other data types into factors. The tidyverse package `readr` guesses the data type of each column and converts types when appropriate (but does NOT convert strings to factors automatically). We will be using `readr` exclusively to import data in this class. 
+
+## readr
+The typical commands used to input data using  `readr` are below: 
+
+```{r, echo = FALSE, out.width= "600px"}
+knitr::include_graphics("images/readr2.png", dpi = 300)
+```
+
+## readr (cont'd)
+
+Using some of the following arguments makes it easier to control how we want to input the data.   
+
+```{r, echo = FALSE, out.width= "800px"}
+knitr::include_graphics("images/readr3.png", dpi = 300)
+```
+<br/>  
+
+__Note__: All of these functions can also be used in an interactive manner via `Environment` > `Import Dataset` > `From Text (readr)` 
+
+<br/>  
+
+## Next step: Import
+
+- RNA read counts  
+- Experimental metadata
+
+## A. RNA read counts  
+```{r cars, echo = TRUE}
+count_summary_rna <- read_delim("1-class1/data/input/count_summary_rna.tsv", 
+                                delim = "\t", 
+                                escape_double = FALSE, 
+                                trim_ws = TRUE)
+```
+
+<br/>  
+
+## B. Experimental metadata
+```{r}
+experiment_metadata <- read_delim("1-class1/data/input/experiment-metadata.txt",
+                                  "\t", 
+                                  escape_double = FALSE, 
+                                  trim_ws = TRUE)
+```
+
+<br/>
+
+## 3. Getting familiar with the data
+
+Some of the useful Data Frame Functions are as follows:  
+  - `head()` - shows first 6 rows  
+  - `tail()` - shows last 6 rows  
+  - `dim()` - returns the dimensions of data frame (i.e. number of rows and number of columns)  
+  - `nrow()` - number of rows  
+  - `ncol()` - number of columns  
+  - `names()` or `colnames()` - both show the names attribute for a data frame  
+  - `sapply(dataframe, class)` - shows the class of each column in the data frame  
+  - `str()` - structure of data frame - name, type and preview of data in each column
+  - `glimpse()`
+
+## Explore
+
+```{r, eval=FALSE}
+count_summary_rna 
+#this works well with tbl_df data type. 
+#Others could take a LONG time  
+
+# display first six rows of a dataframe
+head(count_summary_rna) 
+
+# display last six rows of a dataframe
+tail(count_summary_rna)  
+
+#Compactly display the internal structure of an R object
+str(count_summary_rna)
+
+#Get A Glimpse Of Your Data
+glimpse(count_summary_rna)
+glimpse(experiment_metadata)
+```
+<br/>
+
+## Summary
+
+A generic function used to produce result summaries of the results of various model fitting functions.
+```{r, eval=FALSE}
+summary(count_summary_rna)
+summary(count_summary_rna$`0h_1_RNA_S13_umi.bam`)
+```
+
+## Table
+Uses the cross-classifying factors to build a contingency table of the counts at each combination of factor levels.
+```{r}
+table(experiment_metadata$hour)
+```
+<br/>
+
+## Plotting
+
+The two simplest plots to use to get a sense of your data are `plot(x)` and `hist(x)`
+
+```{r, eval=FALSE, tidy.opts=list(width.cutoff=60)}
+plot(count_summary_rna$`0h_1_RNA_S13_umi.bam`)
+
+plot(count_summary_rna$`0h_1_RNA_S13_umi.bam`,
+     count_summary_rna$`0h_2_RNA_S14_umi.bam`)
+
+plot(count_summary_rna$`0h_1_RNA_S13_umi.bam`,
+     count_summary_rna$`14h_1_RNA_S22_umi.bam`)
+
+plot(log2(count_summary_rna$`0h_1_RNA_S13_umi.bam`),
+     log2(count_summary_rna$`14h_1_RNA_S22_umi.bam`))
+
+plot(log2(count_summary_rna$`0h_1_RNA_S13_umi.bam`),
+     log2(count_summary_rna$`0h_2_RNA_S14_umi.bam`))
+```
+
+## Plotting (cont'd)
+
+```{r, eval=FALSE, tidy.opts=list(width.cutoff=60)}
+hist(count_summary_rna$`0h_1_RNA_S13_umi.bam`)
+
+hist(log2(count_summary_rna$`0h_1_RNA_S13_umi.bam`))
+```
+<br/>
+
+## 4. Tidying and transforming data
+
+What is tidy data?
+
+>   "Tidy datasets are all alike but every messy dataset is messy in its own way"
+>   Hadley Wickham
+
+```{r, echo = FALSE, out.width= "800px"}
+knitr::include_graphics("images/tidydata.png", dpi = 300)
+```
+
+<br/>  
+
+
+## Reshaping data
+
+The four verbs to keep in mind for reshaping data with `tidyr` are:  
+  - `spread`  
+  - `gather`  
+  - `separate`  
+  - `unite`   
+
+```{r, echo = FALSE, out.width= "600px"}
+knitr::include_graphics("images/tidyr-verbs.png", dpi = 300)
+```
+<br/>
+
+## Renaming columns
+```{r}
+names(count_summary_rna)
+#create a new file to preserve original data
+count_summary_rna_mod <- count_summary_rna
+
+#rename columns in the new dataframe
+names(count_summary_rna_mod) <- 
+  c("ensembl_transcript_id", "chr", "start", "end", "strand", "length", 
+    "rna_0h_rep1", "rna_0h_rep2", "rna_0h_rep3", 
+    "rna_14h_rep1", "rna_14h_rep2", "rna_14h_rep3", 
+    "rna_4h_rep1", "rna_4h_rep2", "rna_4h_rep3", 
+    "rna_8h_rep1", "rna_8h_rep2", "rna_8h_rep3")
+```
+
+## Removing columns/rows
+```{r}
+#only keep count data
+count_summary_rna_mod <- count_summary_rna_mod[, c(1, 7:18)] 
+
+names(count_summary_rna_mod)
+```
+
+## Reordering columns
+```{r}
+count_summary_rna_mod <- count_summary_rna_mod[, c(1:4, 8:13, 5:7)]
+names(count_summary_rna_mod)
+```
+
+
+## Tidying the data
+```{r, echo = FALSE, out.width= "800px"}
+knitr::include_graphics("images/reshape-data.png", dpi = 300)
+```
+
+
+## Tidying the data (cont'd)
+
+```{r}
+count_summary_rna_mod <- gather(data = count_summary_rna_mod, 
+              "rna_0h_rep1", "rna_0h_rep2", "rna_0h_rep3",
+              "rna_4h_rep1", "rna_4h_rep2", "rna_4h_rep3", 
+              "rna_8h_rep1", "rna_8h_rep2", "rna_8h_rep3",
+              "rna_14h_rep1", "rna_14h_rep2", "rna_14h_rep3",
+              key = "condition", value = "count")
+table(count_summary_rna_mod$condition)
+```
+
+## Tidying the data (cont'd)
+
+```{r}
+count_summary_rna_mod <- separate(data = count_summary_rna_mod, 
+              condition, sep = "_", 
+              into = c("type", "time", "replicate"))
+table(count_summary_rna_mod$time)
+table(count_summary_rna_mod$replicate)
+```
+
+## 5. Export the data for future use 
+```{r, include=TRUE}
+write.csv(count_summary_rna_mod, 
+          file = "1-class1/data/output/count_summary_rna_mod.csv")
+```
+<br/>
+
+## Session Info
+Finally, we will always end our Rmarkdown documents with the session information:
+```{r}
+sessionInfo()
+```
+
+## Acknowledgements
+
+Most images, especially the cheat sheets, are from www.rstudio.com

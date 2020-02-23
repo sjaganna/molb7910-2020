@@ -1,0 +1,29 @@
+---
+title: "class1-homework.Rmd"
+author: "Sujatha Jagannathan"
+date: "February 24, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Home work
+
+The goal of this homework is to use the output of today's class ("count_summary_rna_mod") as a starting point to generate gene-level count data. 
+ 
+Please execute the following tasks, knit the resulting .Rmd (Lastname_class1-homework.Rmd) and submit the .html output as your assignment.  
+
+1. Read in the `count_summary_rna_mod.csv` we saved in class1-d. (Files: 1-class1 > data > output > count_summary_rna_mod.csv)
+2. Read in the `id-mapping.csv` file provided (Files: 1-class1 > data > input > id-mapping.csv)
+3. `separate` the `ensembl_transcript_id` column by the separator `.`
+4. `join` the new `count_summary_rna_mod.csv` with `id-mapping.csv` 
+
+```{r, echo = FALSE, out.width= "300px"}
+knitr::include_graphics("images/join-for-homework.png", dpi = 300)
+```
+
+5. `glimpse` the resulting new data frame
+6. Export this file as `data_gene-level.csv` and save within data > output (we will use this as the starting point for next class)
+7. Knit the resulting document and upload the resulting .html as your assignment. 
