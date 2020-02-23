@@ -1,0 +1,72 @@
+---
+title: "Practical Computational Biology: R"
+author: "Sujatha Jagannathan"
+date: "February 24, 2020"
+output: ioslides_presentation
+incremental: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Learning objectives for this course
+> The primary learning objectives are to work towards being able to:  
+
+* Retrieve and import genomic data.  
+* Prepare data for analysis (“tidy”-ing).  
+* Conduct basic exploratory analysis - getting familiar with your dataset.  
+* Test specific hypotheses using computational methods.  
+* Visualize and communicate your results.  
+* Practice reproducible analysis.  
+
+## Today's class outline
+
+- Coding best practices
+- Review data types
+- In-class exercise on RNAseq dataset
+    + Import
+    + Explore
+    + Tidy
+    + Export
+- Homework instructions
+
+## Class rules {.build .bigger}
+
+- Ask for help (use the stickie notes)  
+
+- Offer help!   
+      + We have a wide range of R experience in this class room  
+      + Pair with someone with a different R expertise and help each other  
+
+- Use Google *liberally*  (& the cheatsheets!)
+
+## Coding best practices
+
+>   "Good coding style is like correct punctuation: you can manage without it, butitsuremakesthingseasiertoread."
+>   
+>   --- Hadley Wickham
+
+## Data types and structures {.smaller}
+- Basic data types: numeric, character, date, and logical. 
+- Basic data structures: vector, matrix, array, data frame (or, tibble), and list. 
+
+```{r, out.width = "800px"}
+knitr::include_graphics("images/data-structures.png", dpi=300)
+```
+
+- Data can be queried to understand it better: `class()`, `str()`, etc. 
+
+## Import, explore, modify, and export an RNA-seq count dataset {.smaller}
+
+- Data sets
+    + RNAseq count data (Dyle *et al*; unpublished; please keep confidential)
+    + Experimental metadata
+
+<br/>
+
+- Our goal is to import these data, explore the data, clean up by eliminating unnecessary columns and renaming variables using base R, tidy the data, and then export the file.
+
+## Homework
+
+- Instructions online
