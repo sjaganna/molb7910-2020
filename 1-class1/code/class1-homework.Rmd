@@ -25,5 +25,5 @@ knitr::include_graphics("images/join-for-homework.png", dpi = 300)
 ```
 
 5. `glimpse` the resulting new data frame
-6. Export this file as `data_gene-level.csv` and save within data > output (we will use this as the starting point for next class)
+6. Export this file as `data_transcript-level.csv` and save within data > output (we will use this as the starting point for next class)
 7. Knit the resulting document and upload the resulting .html as your assignment. 
