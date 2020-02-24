@@ -71,6 +71,16 @@ experiment_metadata <- read_delim("1-class1/data/input/experiment-metadata.txt",
 
 ## 3. Getting familiar with the data
 
+R provides many functions to examine features of a data object
+
+  - `class()` - what kind of object is it (high-level)?
+  - `str()` - what is the structure of the object?
+  - `typeof()` - what is the object’s data type (low-level)?
+  - `length()` - how long is it? What about two dimensional objects?
+  - `attributes()` - does it have any metadata?
+  - `is_tibble()` - use is.? to confirm data type
+
+## 
 Some of the useful Data Frame Functions are as follows:  
   - `head()` - shows first 6 rows  
   - `tail()` - shows last 6 rows  
@@ -180,8 +190,10 @@ knitr::include_graphics("images/tidyr-verbs.png", dpi = 300)
 names(count_summary_rna)
 #create a new file to preserve original data
 count_summary_rna_mod <- count_summary_rna
+```
 
-#rename columns in the new dataframe
+##rename columns in the new dataframe
+```{r}
 names(count_summary_rna_mod) <- 
   c("ensembl_transcript_id", "chr", "start", "end", "strand", "length", 
     "rna_0h_rep1", "rna_0h_rep2", "rna_0h_rep3", 

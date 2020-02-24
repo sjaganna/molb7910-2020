@@ -3212,6 +3212,19 @@ slide:not(.current) .plotly.html-widget{
 
 </article></slide><slide class=""><hgroup><h2>3. Getting familiar with the data</h2></hgroup><article  id="getting-familiar-with-the-data">
 
+<p>R provides many functions to examine features of a data object</p>
+
+<ul>
+<li><code>class()</code> - what kind of object is it (high-level)?</li>
+<li><code>str()</code> - what is the structure of the object?</li>
+<li><code>typeof()</code> - what is the object’s data type (low-level)?</li>
+<li><code>length()</code> - how long is it? What about two dimensional objects?</li>
+<li><code>attributes()</code> - does it have any metadata?</li>
+<li><code>is_tibble()</code> - use is.? to confirm data type</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2></h2></hgroup><article  id="section">
+
 <p>Some of the useful Data Frame Functions are as follows:<br/>- <code>head()</code> - shows first 6 rows<br/>- <code>tail()</code> - shows last 6 rows<br/>- <code>dim()</code> - returns the dimensions of data frame (i.e. number of rows and number of columns)<br/>- <code>nrow()</code> - number of rows<br/>- <code>ncol()</code> - number of columns<br/>- <code>names()</code> or <code>colnames()</code> - both show the names attribute for a data frame<br/>- <code>sapply(dataframe, class)</code> - shows the class of each column in the data frame<br/>- <code>str()</code> - structure of data frame - name, type and preview of data in each column - <code>glimpse()</code></p>
 
 </article></slide><slide class=""><hgroup><h2>Explore</h2></hgroup><article  id="explore">
@@ -3310,10 +3323,11 @@ hist(log2(count_summary_rna$`0h_1_RNA_S13_umi.bam`))</pre>
 ## [16] &quot;8h_1_RNA_S19_umi.bam&quot;  &quot;8h_2_RNA_S20_umi.bam&quot;  &quot;8h_3_RNA_S21_umi.bam&quot;</pre>
 
 <pre class = 'prettyprint lang-r'>#create a new file to preserve original data
-count_summary_rna_mod &lt;- count_summary_rna
+count_summary_rna_mod &lt;- count_summary_rna</pre>
 
-#rename columns in the new dataframe
-names(count_summary_rna_mod) &lt;- 
+<p>##rename columns in the new dataframe</p>
+
+<pre class = 'prettyprint lang-r'>names(count_summary_rna_mod) &lt;- 
   c(&quot;ensembl_transcript_id&quot;, &quot;chr&quot;, &quot;start&quot;, &quot;end&quot;, &quot;strand&quot;, &quot;length&quot;, 
     &quot;rna_0h_rep1&quot;, &quot;rna_0h_rep2&quot;, &quot;rna_0h_rep3&quot;, 
     &quot;rna_14h_rep1&quot;, &quot;rna_14h_rep2&quot;, &quot;rna_14h_rep3&quot;, 
