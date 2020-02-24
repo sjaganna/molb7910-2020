@@ -39,7 +39,11 @@ R can be used as an ordinary calculator. Here are some examples.
     # This is a comment line
 
 ## Data structures
-R has multiple data structures. If you are familiar with excel you can think of data structures as building blocks of a table and the table itself, and a table is similar to a sheet in excel. Most of the time you will deal with tabular data sets, you will manipulate them, take sub-sections of them. It is essential to know what are the common data structures in R and how they can be used. R deals with named data structures, this means you can give names to data structures and manipulate or operate on them using those names.
+- R has multiple data structures. 
+- If you are familiar with excel you can think of data structures as building blocks of a table and the table itself, and a table is similar to a sheet in excel. 
+- Most of the time you will deal with tabular data sets, you will manipulate them, take sub-sections of them. 
+- It is essential to know what are the common data structures in R and how they can be used. 
+- R deals with named data structures, this means you can give names to data structures and manipulate or operate on them using those names.
 
 ## Data structures
 
@@ -51,7 +55,11 @@ Source: Devopedia
 
 
 ## Vectors
-Vectors are one the core R data structures. It is basically a list of elements of the same type (numeric,character or logical). Later you will see that every column of a table will be represented as a vector. R handles vectors easily and intuitively. You can create vectors with c() function, however that is not the only way. The operations on vectors will propagate to all the elements of the vectors.
+- Vectors are one the core R data structures. 
+- It is basically a list of elements of the same type (numeric,character or logical). 
+- Later you will see that every column of a table will be represented as a vector. 
+- R handles vectors easily and intuitively. 
+- The operations on vectors will propagate to all the elements of the vectors.
 
 ## 
     x <- c(1,3,2,10,5) #create a vector named x with 5 components
@@ -66,7 +74,8 @@ Vectors are one the core R data structures. It is basically a list of elements o
     y <- y*2           #here, y is changed
 
 ## Matrices
-A __matrix__ refers to a numeric array of rows and columns. You can think of it as a stacked version of vectors where each row or column is a vector. 
+- A __matrix__ refers to a numeric array of rows and columns. 
+- You can think of it as a stacked version of vectors where each row or column is a vector. 
 
 ##
 One of the easiest ways to create a matrix is to combine vectors of equal length using `cbind()`, meaning 'column bind'.
@@ -83,7 +92,9 @@ You can also creat a matrix by listing the elements using `matrix()`:
     m2 <- matrix(c(1,3,2,5,-1,2,2,3,9),nrow=3)
 
 ## Data Frames
-A data frame is more general than a matrix, in that different columns can have different modes (numeric, character, factor, etc.). A data frame can be constructed by data.frame() function. For example, we illustrate how to construct a data frame from genomic intervals or coordinates.
+- A data frame is more general than a matrix, in that different columns can have different modes (numeric, character, factor, etc.). 
+- A data frame can be constructed by data.frame() function. 
+- For example, we illustrate how to construct a data frame from genomic intervals or coordinates.
 
     chr <- c("chr1", "chr1", "chr2", "chr2")
     strand <- c("-", "-", "+", "+")
@@ -95,7 +106,8 @@ A data frame is more general than a matrix, in that different columns can have d
     mydata 
 
 ## 
-Here you can assign names  (in caps in this example) to each list that will be combined to make a dataframe. These list names will be transferred to the column name.
+- Here you can assign names  (in caps in this example) to each list that will be combined to make a dataframe. 
+- These list names will be transferred to the column name.
 
     mydata <- data.frame(CHROM=chr,
                      START=start,
@@ -125,11 +137,17 @@ This will work for reasonable inputs that are already data.frames, lists, matric
 
 ## Why use a tibble over a dataframe?
 
-`tibble()` does much less than `data.frame()`: it never changes the type of the inputs (e.g. it never converts strings to factors!), it never changes the names of variables, it only recycles inputs of length 1, and it never creates `row.names()`. You can read more about these features in the vignette, `vignette("tibble")`.
+- `tibble()` does much less than `data.frame()`: 
+    - it never changes the type of the inputs (e.g. it never converts strings to factors!)
+    - it never changes the names of variables
+    - it only recycles inputs of length 1, and it never creates `row.names()`
+
+You can read more about these features in the vignette, `vignette("tibble")`.
 
 ## Subsetting tabular data
 
-__Matrices__, __data frames__, and __tibbles__ are all tabular data structures. You can subset them using **[ ]** and providing desired rows and columns to subset. Here is how that works conceptually:
+- __Matrices__, __data frames__, and __tibbles__ are all tabular data structures. 
+- You can subset them using **[ ]** and providing desired rows and columns to subset. Here is how that works conceptually:
 
 ```{r, echo = FALSE, out.width= "800px"}
 knitr::include_graphics("images/slicingDataFrames.png", dpi = 300)
