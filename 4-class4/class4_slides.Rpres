@@ -1,0 +1,386 @@
+Exploratory Data Analysis
+========================================================
+author: Neel Mukherjee
+date: March 2, 2020
+autosize: true
+transition: rotate
+font-family: 'Arial'
+
+Why is EDA so important?  
+========================================================
+incremental: true
+
+Data can be very sneaky...  
+
+
+Meet __Datasaurus__
+
+![](https://nicholasmarosszeky.typepad.com/.a/6a01b7c8b34968970b01bb099a8636970d-pi)
+
+These are all different, right?
+========================================================
+
+![](https://d2f99xq7vri1nk.cloudfront.net/AllDinosGrey_1.png)
+
+
+Summary stats are identical!
+========================================================
+incremental: true
+
+While different in appearance, each dataset has the same summary statistics (mean, standard deviation, and Pearson's correlation) to two decimal places.
+
+![](https://d2f99xq7vri1nk.cloudfront.net/DinoSequentialSmaller.gif)
+
+## Pretty please: ALWAYS PLOT YOUR DATA
+
+Can't trick a boxplot, right?
+========================================================
+incremental: true
+
+![](https://d2f99xq7vri1nk.cloudfront.net/boxplots.gif)
+
+- boxplot (bottom) -> wait are those 3 identical?
+- jitter plot (middle) -> good, but tricky with large data
+- histogram (top)-> always a good idea (consider bin size) 
+
+Violin plots >> boxplots
+========================================================
+incremental: true
+
+![](https://d2f99xq7vri1nk.cloudfront.net/BoxViolinSmaller.gif)
+
+Violin plots are great but not a silver bullet**
+
+## Pretty please: ALWAYS PLOT YOUR DATA - in a couple different ways!
+
+[Click for these fantastic visualizations/datasets](https://www.autodeskresearch.com/publications/samestats)
+
+
+Learning objectives  
+========================================================
+incremental: true
+
+1. Data exploration - what your data "look" like?
+    + histograms and density plots
+    + box-, violin-, and jitter-plots
+2. Comparing/contrasting data.
+    + correlation
+    + clustering
+    + principle components analysis (PCA)
+
+
+Trick to install only new packages
+========================================================
+
+```{r install packages,echo=T, message=FALSE}
+# all packages I'll need today
+packages_needed <- c("tidyverse", "reshape2", "ggplot2", "ggthemes", "ggrepel", "scales", "viridis", "corrplot", "pheatmap"
+                     )
+# figure out which ones I do NOT have installed
+packages_new <- packages_needed[!(packages_needed %in% installed.packages()[,"Package"])]
+
+# install only packages I do NOT have installed
+if( length(packages_new) )
+  { install.packages(packages_new) }
+
+```
+
+
+How did that work?
+========================================================
+incremental: true  
+
+If the `test_expression` is `TRUE`, the `statement` gets executed. But if it’s `FALSE`, nothing happens.
+
+    if (test_expression)
+    { statement }
+
+The `test_expression` can be a logical or numeric vector.
+
+In the case of numeric vector, **0** is taken as `FALSE`, otherwise as `TRUE`.
+
+
+Load libraries
+========================================================
+
+```{r libraries}
+# Load all the libraries needed for this exercise.
+library(tidyverse) # data-warngling
+library(reshape2) # transforming data
+library(ggplot2) # plotting
+library(ggthemes) # pretty plotting themes
+library(ggrepel) # spread data point labels
+library(scales) # annotating axes in plots
+library(viridis) # nice color pallete
+library(corrplot) # easy correlation plots
+library(pheatmap) # easy heatmaps
+
+```
+
+
+Import data
+========================================================
+
+```{r import data}
+# get data
+data_genelevel <- readr::read_tsv(file = "data/data_genelevel.tsv")
+
+# get dux targets
+dux_targets <- readr::read_csv(file = "data/target_genes.csv")
+```
+
+Examine data
+========================================================
+
+```{r summary, eval=F}
+# take a look
+View(data_genelevel) 
+
+# Add a column for if data is DUX4 target or not
+data_genelevel$target <- if_else(condition = data_genelevel$gene_symbol %in% dux_targets$hgnc_symbol,
+        true = "target",
+        false = "not_target"
+          )
+
+table(data_genelevel$target)
+```
+
+Calc basic stats by group
+========================================================
+
+```{r basic stats, eval=F}
+data_genelevel %>%
+  group_by(target) %>%
+  summarise_all(funs(mean)) %>%
+  glimpse()
+# boo 'gene_symbol'
+```
+
+```{r basic stats 2, eval=F}
+data_genelevel %>%
+  group_by(target) %>%
+  select(-gene_symbol) %>%
+  summarise_all(funs(mean,median)) %>%
+  glimpse()
+
+```
+
+Transform data (wide-to-long)
+========================================================
+
+```{r transform in different manner, eval=F}
+# convert from wide-to-long
+long_data <- melt(data_genelevel)
+
+# rename columns
+names(long_data) <- c("gene_symbol","Target","Sample", "Count") 
+
+View(long_data)
+
+```
+
+
+Plotting data with ggplot2
+========================================================
+incremental: true  
+
+R has useful base plotting functions I use on the fly.  
+`hist()`, `plot()`, and `barplot()`
+
+However, they are limited and far from figure quality.
+
+We will use [ggplot2](https://ggplot2.tidyverse.org/), which you learned on Friday.
+
+Default [ggplot2](https://www.r-graph-gallery.com/ggplot2-package.html) graphs are not publication quality.
+
+However, with only a few tweaks you can get there! 
+
+
+The basic syntax of ggplot()
+========================================================
+incremental: true  
+
+`ggplot()`: build plots piece by piece
+The concept of ggplot divides a plot into three different fundamental parts:
+
+plot = __data__ + __aesthetics__ + __geometry__.  
+
+__data__: a data frame
+
+__aesthetics__: specify x and y variables and additional features...fill, color, group, shape, size, etc.
+
+__geometry__: specify type...histogram, violin, line, density, dotplot, etc. 
+
+
+Part I: what does the data look like?  
+========================================================
+incremental: true  
+    + histograms and density plots
+    + box-, violin-, and jitter-plots
+
+```{r plots to make, eval=T}
+# histogram: 0 hr rep1 "hour00_rep1"
+# histogram log10
+# histogram log10 -> preferred
+# histogram log10 + pseudocount
+# density log10 + pseudocount
+# scattter plot
+# scattter plot log10 + pseudocount
+# density all samples log10 + pseudocount
+# boxplot all samples log10 + pseudocount
+# violinplot all samples log10 + pseudocount
+# jitterplot Dux4 targets
+
+
+```
+
+
+```{r plots, eval=F, include=F}
+
+# histogram
+ggplot(data = data_genelevel, aes(x = hour00_rep1)) +
+  geom_histogram(bins = 50) +
+  theme_few() +
+  ggtitle("histogram")
+
+
+# histogram log10-scale
+ggplot(data = data_genelevel, aes(x = log10(hour00_rep1))) +
+  geom_histogram(bins = 50) +
+  theme_few() +
+  ggtitle("histogram log10-scale")
+
+# histogram log10-scale -> my preferred route
+ggplot(data = data_genelevel, aes(x = hour00_rep1)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10() +
+  theme_few() +
+  ggtitle("histogram log10-scale")
+
+# histogram log10-scale with pseudocount
+ggplot(data = data_genelevel, aes(x = hour00_rep1 + 1)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10() +
+  theme_few() +
+  ggtitle("histogram log10-scale with pseudocount")
+
+
+# density log10-scale with pseudocount
+ggplot(data = data_genelevel, aes(x = hour00_rep1 + 1)) +
+  geom_density(bins = 50) +
+  scale_x_log10() +
+  theme_few() +
+  ggtitle("density log10-scale with pseudocount")
+
+# scattter plot
+ggplot(data = data_genelevel, aes(x = hour00_rep1, y = hour00_rep2)) +
+  geom_point() + 
+  theme_few() +
+  ggtitle("scattter plot")
+
+# scattter plot log10-scale with pseudocount
+ggplot(data = data_genelevel, aes(x = hour00_rep1 + 1, y = hour00_rep2 + 1)) +
+  geom_point() + 
+  scale_x_log10() +
+  scale_y_log10() +
+  theme_few() +
+  ggtitle("scattter plot log10-scale with pseudocount")
+
+
+# density of all samples log10-scale with pseudocount
+ggplot(long_data, aes(x=Count + 1, color = Sample)) + 
+  geom_density() +
+  scale_x_log10() +
+  theme_few() +
+  theme(legend.position="right") +
+  ggtitle("density samples log10-scale with pseudocount")
+
+# boxplot of all samples log10-scale with pseudocount
+ggplot(long_data, aes(y=Count + 1, x = Sample, color = Sample)) + 
+  geom_boxplot() +
+  scale_y_log10() +
+  theme_few() +
+  theme(legend.position="right") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("boxplot samples log10-scale with pseudocount")
+
+# violinplot of all samples log10-scale with pseudocount
+ggplot(long_data, aes(y=Count + 1, x = Sample, color = Sample)) + 
+  geom_violin() +
+  scale_y_log10() +
+  theme_few() +
+  theme(legend.position="right") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("violinplot samples log10-scale with pseudocount")
+
+
+
+# jitterplot of Dux4 targets
+ggplot(long_data %>% filter(Target=="target"), aes(y=Count + 1, x = Sample, color = Sample)) + 
+  geom_jitter(width = 0.25) +
+  scale_y_log10() +
+  theme_few() +
+  theme(legend.position="right") +
+  ggtitle("jitterplot samples log10-scale with pseudocount")
+
+
+
+```
+
+Part II: Comparing/contrasting data  
+========================================================
+incremental: true  
+How similar/different are the samples to each other?
+
+    + correlation
+    + clustering
+    + principle components analysis (PCA)
+
+Correlation
+========================================================
+incremental: true  
+
+Any statistical relationship, whether causal or not, between two random variables.  
+
+
+Most common methods are `Pearson` and `Spearman`.  
+
+`Pearson` is linear relationship between two or more variables.  
+
+`Spearman` is the rank relationship between two or more variables. 
+
+[Let's take a closer look](https://support.minitab.com/en-us/minitab-express/1/help-and-how-to/modeling-statistics/regression/supporting-topics/basics/a-comparison-of-the-pearson-and-spearman-correlation-methods/)
+
+`corrplot` is a good package for [visualization of correlations](http://www.sthda.com/english/wiki/visualize-correlation-matrix-using-correlogram), especially  with many  variables.
+
+
+Heatmap
+========================================================
+
+We will use `pheatmap`. [See here for more details](https://davetang.org/muse/2018/05/15/making-a-heatmap-in-r-with-the-pheatmap-package/)
+
+![](https://davetang.org/muse/2018/05/15/making-a-heatmap-in-r-with-the-pheatmap-package/my_heatmap/)
+
+
+
+Clustering
+========================================================
+incremental: true 
+
+Today we will perform hierarchical clustering of the matrix produced by the pearson correlation. More info watch:
+
+__K-means__
+<iframe width="300" height="150" src="https://www.youtube.com/embed/4b5d3muPQmA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+__Hierarchical__
+<iframe width="300" height="150" src="https://www.youtube.com/embed/7xHsRkOdVwo" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+PCA
+========================================================
+incremental: true
+
+PCA is a common dimensionality reduction method that is used to visualize the similarity and differences in your data. __Let's watch this fantastic 5 minute video explaining PCA__
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/HMOI_lkzW08" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+For more detailed explanations go [here](https://www.nature.com/articles/nbt0308-303) and [here](https://liorpachter.wordpress.com/2014/05/26/what-is-principal-component-analysis/).

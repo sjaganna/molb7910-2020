@@ -1,0 +1,307 @@
+---
+title: "class4_workbook"
+author: "Neelanjan Mukherjee"
+date: "2/29/2040"
+output: html_document
+---
+
+
+```{r install packages,echo=T, message=FALSE}
+# all packages I'll need today
+packages_needed <- c("tidyverse", "reshape2", "ggplot2", "ggthemes", "ggrepel", "scales", "viridis", "corrplot", "pheatmap"
+                     )
+# figure out which ones I do NOT have installed
+
+packages_new <- packages_needed[
+  !(packages_needed %in% installed.packages()[,"Package"])
+  ]
+
+# install only packages I do NOT have installed
+if( length(packages_new) )
+  { install.packages(packages_new) }
+
+```
+
+```{r libraries}
+# Load all the libraries needed for this exercise.
+library(tidyverse) # data-warngling
+library(reshape2) # transforming data
+library(ggplot2) # plotting
+library(ggthemes) # pretty plotting themes
+library(ggrepel) # spread data point labels
+library(scales) # annotating axes in plots
+library(viridis) # nice color pallete
+library(corrplot) # easy correlation plots
+library(pheatmap) # easy heatmaps
+
+```
+
+
+```{r import data}
+# get data
+data_genelevel <- 
+
+# get dux targets
+dux_targets <- 
+  
+```
+
+
+```{r summary, eval=F}
+# take a look
+View(data_genelevel) 
+
+# In a new column named 'target',
+# if the gene is a DUX4 target,
+# TREU write  "target"
+# FALSE write  "not_target"
+data_genelevel$target <- 
+
+table(data_genelevel$target)
+```
+
+
+```{r basic stats, eval=F}
+data_genelevel %>%
+  group_by(target) %>%
+  summarise_all(funs(mean)) %>%
+  glimpse()
+# boo 'gene_symbol'
+
+
+data_genelevel %>%
+  group_by(target) %>%
+  select(-gene_symbol) %>%
+  summarise_all(funs(mean,median)) %>%
+  glimpse()
+
+```
+
+
+```{r transform in different manner, eval=F}
+# convert from wide-to-long
+long_data <- 
+
+# rename columns
+names(long_data) <- c("gene_symbol","Target","Sample", "Count") 
+
+View(long_data)
+
+```
+
+
+```{r plots to make, eval=T}
+# histogram: 0 hr rep1 "hour00_rep1"
+
+# histogram log10
+
+# histogram log10 -> preferred
+
+# histogram log10 + pseudocount
+
+# density log10 + pseudocount
+
+# scattter plot
+
+# scattter plot log10 + pseudocount
+
+# density all samples log10 + pseudocount
+
+# boxplot all samples log10 + pseudocount
+
+# violinplot all samples log10 + pseudocount
+
+# jitterplot Dux4 targets
+
+
+```
+
+
+```{r}
+cor(data_genelevel)
+
+# keep only numeric columns for correlation
+cor_data <- data_genelevel %>% select_if(is.numeric)
+
+
+# pearson assumes a linear realationship!!
+cor(x = cor_data$hour00_rep1, y = cor_data$hour00_rep2, method = "pearson")
+
+# break it with a transformation of y
+
+# try spearman with same transformation of y
+
+# fix it with a different transformation of y
+
+
+# we can caclulate all pairwise correlation coefficients
+# remember the pseudocounts! 
+cor(x = log10(cor_data + 1), method = "pearson")
+
+gene_cor_pearson <- cor(x = log10(cor_data + 1), method = "pearson")
+
+gene_cor_spearman <- cor(x = cor_data, method = "spearman")
+
+
+
+corrplot(corr = gene_cor_pearson,
+         addCoefasPercent = T,
+         addCoef.col = "white",
+         number.cex = .8,
+         diag = T
+         )
+
+corrplot(corr = gene_cor_spearman,
+         addCoefasPercent = T,
+         addCoef.col = "white",
+         number.cex = .8,
+         diag = T
+         )
+
+
+corrplot(corr = gene_cor_pearson,
+         addCoefasPercent = T,
+         addCoef.col = "white",
+         number.cex = .8,
+         diag = T,
+         order = "hclust",
+         addrect = 4,
+         rect.col = "red",
+         title = "Pearson"
+         )
+
+corrplot(corr = gene_cor_spearman,
+         addCoefasPercent = T,
+         addCoef.col = "white",
+         number.cex = .6,
+         diag = T,
+         order = "hclust",
+         addrect = 4,
+         rect.col = "red",
+         title = "Spearman"
+         )
+
+
+
+corrplot(corr = gene_cor_pearson,
+         type = "upper",
+         col = rev(viridis(20)),
+         addCoefasPercent = T,
+         addCoef.col = "white",
+         number.cex = .8,
+         diag = F,
+         title = "Pearson Upper Triangular"
+         )
+
+
+
+
+```
+
+
+
+```{r heatmap}
+# make heatmap of the 
+pheatmap(mat = gene_cor_pearson, clustering_method = "ward.D2", clustering_distance_rows = "euclidean", clustering_distance_cols = "euclidean")
+
+pheatmap(mat = gene_cor_pearson, 
+         clustering_method = "ward.D2",
+         clustering_distance_rows = "euclidean",
+         clustering_distance_cols = "euclidean",
+         color = viridis(n = 5)
+         )
+
+pheatmap(mat = gene_cor_pearson,
+         clustering_method = "ward.D2",
+         clustering_distance_rows = "euclidean",
+         clustering_distance_cols = "euclidean",
+         color = viridis(n = 100)
+         )
+
+
+```
+
+```{r pca}
+
+pca_data <- prcomp(log10(cor_data + 1), center = T, scale. = T) 
+
+summary(pca_data) # summarize the PCs by variance
+
+pca_data_info <- summary(pca_data) # assing the summary to the variable 'pca_data_info'
+
+pca_data_info$importance[2,1] # then we can pull specific numbers out of 'pca_data_info'
+
+```
+
+
+```{r pca plot}
+pca_plot_data <- data.frame(pca_data$rotation) # we make a dataframe out of the rotations and will use this to plot
+
+ggplot(pca_plot_data, aes(x=PC2, y=PC1)) +
+  geom_point(size=2) +
+  theme_few() +
+  ylab(paste("PC1 (%",100*round(pca_data_info$importance[2,1], digits = 3),")", sep = "")) +
+  xlab(paste("PC2 (%",100*round(pca_data_info$importance[2,2], digits = 3),")", sep = "")) +
+  ggtitle("PCA analysis") 
+
+
+
+
+pca_plot_data$ID <- rownames(pca_plot_data)
+pca_plot_data <- pca_plot_data %>% separate(col = ID, sep = "_", into = c("time","rep"))
+
+# recode "rep"
+pca_plot_data$rep <- recode(pca_plot_data$rep, rep1 = "A", rep2 = "B", rep3 = "C")
+
+# gsub
+pca_plot_data$time <- gsub(pattern = "hour", replacement = "", x = pca_plot_data$time)
+
+
+ggplot(pca_plot_data, aes(x=PC2, y=PC1)) +
+  geom_point(size=2) +
+  theme_few() +
+  ylab(paste("PC1 (%",100*round(pca_data_info$importance[2,1], digits = 3),")", sep = "")) +
+  xlab(paste("PC2 (%",100*round(pca_data_info$importance[2,2], digits = 3),")", sep = "")) +
+  ggtitle("PCA analysis") +
+  geom_text_repel(label=pca_plot_data$rep)
+
+ggplot(pca_plot_data, aes(x=PC2, y=PC1)) +
+  geom_point(size=2) +
+  theme_few() +
+  ylab(paste("PC1 (%",100*round(pca_data_info$importance[2,1], digits = 3),")", sep = "")) +
+  xlab(paste("PC2 (%",100*round(pca_data_info$importance[2,2], digits = 3),")", sep = "")) +
+  ggtitle("PCA analysis") +
+  geom_text_repel(label=paste(pca_plot_data$time,pca_plot_data$rep))
+
+
+
+p_pca <- ggplot(pca_plot_data, aes(x=PC2, y=PC1, color=time, shape=rep)) +
+  geom_point(size=2) +
+  theme_few() +
+  ylab(paste("PC1 (%",100*round(pca_data_info$importance[2,1], digits = 3),")", sep = "")) +
+  xlab(paste("PC2 (%",100*round(pca_data_info$importance[2,2], digits = 3),")", sep = "")) +
+  ggtitle("PCA analysis") 
+
+
+p_pca +
+  scale_color_manual(values = viridis(n = 4, option = "D"))
+
+
+p_pca +
+  scale_color_manual(values = viridis(n = 4, option = "D")) +
+  geom_text_repel(label=paste(pca_plot_data$time,pca_plot_data$rep)) 
+
+p_pca +
+  scale_color_manual(values = viridis(n = 4, option = "D")) +
+  geom_text_repel(label=paste(pca_plot_data$time,pca_plot_data$rep)) +
+  theme(legend.position = "none")
+
+```
+
+
+
+```{r}
+sessionInfo()
+```
+
+
