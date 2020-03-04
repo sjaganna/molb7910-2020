@@ -1,0 +1,117 @@
+---
+title: "class5-homework.Rmd"
+author: "Sujatha Jagannathan"
+date: "March 4, 2020"
+output: html_document
+---
+<br/>
+
+The goal of this homework is to use `edgeR` to calculate fold change across two different conditions, combining `dplyr` verbs to transform the foldchange data, and then to plot it using `ggplot`.
+
+We will also practice converting computational goals to "pseudocode" and then into "real code". This is an important aspect of coding. For this class, writing the pseudocode carries 50% of the points. So even if your real code does not work, if you think through how to accomplish the task at hand via pseudocode, that is worth half the points. 
+
+Please execute the following tasks, knit the resulting .Rmd (`Lastname_class5-homework.Rmd`) and submit the .html output as your assignment.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE, eval = TRUE)
+```
+
+<br/>
+
+#### 1. Load packages 
+Packages: `tidyverse`, `ggplot2`, `edgeR`
+```{r, include = TRUE}
+#load packages here
+
+```
+
+<br/>
+
+#### 2. (Optional) Set working directory, if need be
+```{r}
+#setwd/here
+
+```
+
+<br/>
+
+#### 3. Import data
+Path: "5-class4/data/input/data_gene_level.csv"
+```{r}
+#import data
+
+```
+
+<br/>
+
+#### 4. Conduct edgeR analysis for the 8h sample, using the 0h sample as the control sample. 
+
+Follow the same steps 1-10 we used for the 14h sample in our class. Note that the only changes you will make to this pipeline is to subset the geneExpr dataframe differently (step #1) and to save the final foldchange data with the appropriate name `(step #10). However, please look up the steps in edgeR (use the references at the bottom of `class5-DGE.Rmd`) and try to understand them. 
+
+```{r}
+# edgeR analysis for 8h sample. 
+
+
+
+```
+
+<br/>
+
+#### 5. Prepare the foldchange data for plotting. 
+
+**Goal**:   
+
+1. Move the rownames of `DUX4_8h$table` into a new column to enable the next steps.
+
+2. Combine the results with the original `data_gene_level` file using `ensembl_gene_id` to map the ids back to `hgnc_symbol`. We will need to gene symbols for subsequent plotting.
+
+
+**Pseudocode**:  
+1.   
+2.   
+
+**Actual code**: 
+```{r}
+# 1.   
+
+# 2.   
+
+```
+
+<br/>
+
+#### 6. Create the following plots to explore our data  
+
+**Goal**:   
+
+1. Create an M-A plot with the entire foldchange dataset. (M or log ratio here is`logFC`, and A or mean average here is `logCPM`). Color the points with `FDR > 0.05` in grey. 
+
+2. Create a Volcano plot with the entire foldchange dataset. (Volcano plot is `logFC` vs. -log10(`FDR`). Color the points with `logFC > 2` blue and `logFC < 2` red. Draw a line at `FDR = 0.05`. 
+
+3. Remake the volcano plot with the entire foldchange dataset, highlighting the following DUX4 target genes in one color and the nontargets in another color.
+    - targets <- ZSCAN4, KHDC1L, RFPL1, DUXA, CCNA1, CLK1
+    - nontargets <- RPS14, RPS3, RPL36, RPL28
+
+**Pseudocode**:  
+1.   
+2.   
+3.   
+
+**Actual code**: 
+```{r}
+# plot 1. 
+
+# plot 2. 
+
+# plot 3. 
+
+```
+
+<br/>
+
+#### 6. Print sessionInfo {.smallest}
+
+```{r}
+#sessionInfo
+
+```

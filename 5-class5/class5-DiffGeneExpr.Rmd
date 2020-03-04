@@ -1,0 +1,226 @@
+---
+title: "class5-DGE.Rmd"
+author: "Sujatha Jagannathan"
+date: "March 4, 2020"
+output: ioslides_presentation
+---
+
+<br/>  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparing R
+Install and load packages  
+```{r, include = TRUE, warning=FALSE, message=FALSE}
+
+# if (!requireNamespace("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# 
+# BiocManager::install("edgeR")
+
+library("tidyverse")
+library("here")
+library("edgeR")
+library("pheatmap")
+library("ggthemes")
+```
+This should install readr, tidyr, dplyr, purr, stringr, ggplot2, tibble, and forcats.
+
+## Set working directory
+```{r}
+# no need
+getwd() #just to confirm
+```
+
+## Differential gene expression using edgeR    
+
+## Introduction
+
+There are a number of steps in conducting differential gene expression analysis using RNA-seq data. Here, we assume that you have already mapped and counted the reads from an RNA-seq experiment (i. e. fastq data has been mapped to a reference genome and reads that map to a certain gene have been counted using a program such as STAR). Once you have the count data, we will generate matrix containing sample names as column ids and gene names as row ids. This matrix can then be input into edgeR to generate log2 fold change values for each gene along with a p-value and fdr. The code we will use to accomplish this is simple, but does a LOT to your data behind the scenes. 
+
+## Introduction
+```{r, echo = FALSE, out.width= "300px"}
+knitr::include_graphics("images/rnaseq-pipeline.png", dpi = 200)
+```
+
+<br/>  
+
+## edgeR pipeline {.smaller}
+
+1. **Input data** as a count matrix (rownames = gene ids, colnames = sample ids)
+2. **Define grouping** of replicates. (if you have multiple replicates, you need to specify how they are organized with respect to the different samples)
+3. Combine #1 and #2 to **generate a DGElist** using `DGElist(counts=<data>, group=<grouping>)`
+4. **Filter** genes with low counts using `data[keep]`
+5. **Normalize** the counts post-filtering via `calcNormFactors()`
+6. Convert #2 into an **experimental design** using `model.matrix()` for linear modeling. 
+7. **Estimate dispersion** using `estimateDisp(<count-matrix>, <design>)`
+8. **Fit a generalized linear model** using `glmFit(<output-from-above>, <design>)`
+9. **Log-likelihood ratio test** using `glmLRT(<output-from-above>, coef=2)`
+10. Find **top differentially expressed genes** using `topTags(<output-from-above$table>, n=10733)`
+
+<br/>  
+##
+Let's get started! 
+
+<br/>  
+
+## Importing data
+```{r}
+data_gene_level <- read_csv("data/input/data_gene_level.csv")
+data_gene_level <- data_gene_level  %>% select(-X1)
+```
+
+## Prepare data
+```{r}
+# make long data wide
+
+
+data_gene_level_wide <- data_gene_level %>% 
+                      # step 1 - unite time, replicate, and type into one column
+                      unite(condition, type, time, replicate, sep = "_") %>%
+                      # step 2 - spread -> pivot_wider (the new spread)
+                      pivot_wider(names_from = condition, values_from = count) %>%
+                      # remove rows with no ensembl gene ids
+                      filter(!is.na(ensembl_gene_id))
+
+# arrange columns by proper time point
+data_gene_level_wide <- data_gene_level_wide[, c(1:5, 9:14, 6:8)]
+```
+
+##
+For edgeR to work, we need the count data to be in a matrix with gene names as row names and sample names as column names. Tibbles (`tbl_df`) do not allow a variable to be contained in a row name. Therefore, they don't allow row names at all. Hence, we need to convert the data_gene_level_wide tibble to a data.frame. 
+```{r}
+geneExpr <- data.frame(data_gene_level_wide) #tbl_df to data.frame
+row.names(geneExpr) <- geneExpr$ensembl_gene_id # This is where we move the gene id information into row name
+x <- geneExpr[, c(3:14)] # then, we get rid of the column containing non-numeric information. Thus, generating out matrix of count data. 
+```
+
+
+## edgeR analysis
+
+## 1. Subsetting the data: 
+if you want to only consider a subset of conditions for fold-change calculations
+```{r}
+# Examples
+# keeping 0h and 14h samples only
+x1 <- x[, c(1:3, 10:12)] 
+# comparing 0h and 4h samples
+x2 <- x[, c(1:6)]
+```
+Note: You can create as many sets as you want for the different comparisions you want to make, such as x1, x2, and so on. Just make sure to do the following steps also for each of the sets you made. For this class, we will utilize the whole dataset `x`
+
+## 2. Define sample grouping
+```{r}
+time <- factor(c("hour00", "hour00", "hour00", 
+                  "hour14", "hour14", "hour14"))
+```
+#Note: If you made more than one sets, you need to define their grouping individually as group1, group2, etc. 
+
+## 3. Generate a DGE list
+```{r}
+d <- DGEList(counts=x1, group = time)
+```
+
+## 4. Filter genes with low counts & normalize
+(require >1 cpm in at least 1/2 of the samples)
+```{r}
+# identify the rows to keep that have cpm() > 1
+keep <- rowSums(cpm(d)>1) >= 3 
+# remove the rows that don't have sufficient cpm
+d <- d[keep, , keep.lib.sizes=FALSE] 
+```
+
+## 5. Calculate normalization factors to scale the raw library sizes.
+
+edgeR normalizes the genes counts using the method TMM (trimmed means of m values). TMM removes the extremely lowly and highly expressed genes and also those genes that are very different across samples. It then compares the total counts for this subset of genes between the two samples to get the scaling factor. *Never* give edgeR pre-normalized counts. 
+```{r}
+d <- calcNormFactors(d, method = "TMM")
+```
+
+## Did the normalization work? Let's check
+```{r}
+counts <- d$counts
+pseudoCounts <- log2(counts + 1)
+boxplot(pseudoCounts, col="gray", las=3)
+
+normCounts <- cpm(d)
+pseudoNormCounts <- log2(normCounts + 1)
+boxplot(pseudoNormCounts, col="gray", las=3)
+```
+
+## 6. create a model matrix to allow linear modeling
+```{r}
+design <- model.matrix(~time)
+```
+
+## 7. estimate dispersion
+```{r fig.height = 3, fig.width = 4}
+d <- estimateDisp(d, design)
+class(d)
+```
+
+## What is dispersion?
+- Dispersion measures the variability of the abundance of a gene within replicates.
+- Biological CV (BCV) is the sqrt of dispersion
+```{r fig.height = 4, fig.width = 5}
+plotBCV(d)
+```
+
+## 8. Fit a generalized linear model 
+For RNA-seq count data, this is a negative binomial generalized log-linear model. More info in the reference and also [here](https://www.theanalysisfactor.com/count-vs-continuous-variables-differences-under-the-hood/)
+```{r}
+d1 <- glmFit(d, design)
+class(d1)
+```
+
+## 9. Conduct Tagwise likelihood ratio tests for DGEGLM
+```{r}
+d2 <- glmLRT(d1, coef=2)
+class(d2)
+```
+
+## 10. Extract differentially expressed genes
+Extract the most differentially expressed genes (or sequence tags) from a test object, ranked either by p-value or by absolute log-fold-change.
+```{r}
+DUX4_14h <- topTags(d2, n=10610) 
+#DUX4 <- topTags(d2, n = Inf)
+#DUX4 <- topTags(d2, n=500) 
+```
+
+## Data clean up and export
+```{r}
+foldchange_14h <- cbind(ensembl_gene_id = row.names(DUX4_14h$table),
+                    DUX4_14h$table)
+foldchange_14h <- left_join(data_gene_level_wide, foldchange_14h, 
+                        by = "ensembl_gene_id")
+foldchange_14h <- unique(foldchange_14h)
+write.csv(foldchange_14h, file = "data/output/foldchange_14h.csv")
+```
+
+<br/>  
+
+## M-A plot
+```{r fig.height = 3, fig.width = 4}
+ggplot(foldchange_14h, aes(x = logCPM, y = logFC)) + 
+  geom_point()
+```
+
+## Volcano plot
+```{r fig.height = 3, fig.width = 3}
+ggplot(foldchange_14h, aes(x = logFC, y = -log10(FDR))) + 
+  geom_point()
+```
+
+## SessionInfo
+
+```{r}
+sessionInfo()
+```
+
+#### References
+Youtube video on edgeR: https://www.youtube.com/watch?v=5tGCBW3_0IA  
+edgeR tutorial 1: https://web.stanford.edu/class/bios221/labs/rnaseq/lab_4_rnaseq.html
+edgeR tutorial 2: https://gist.github.com/jdblischak/11384914
+GLM for RNA-seq data: https://bioramble.wordpress.com/2016/01/30/why-sequencing-data-is-modeled-as-negative-binomial/
