@@ -1,0 +1,52 @@
+---
+title: "class3-homework"
+author: "Sujatha Jagannathan"
+date: "2/28/2020"
+output: html_document
+---
+The goal of this homework is to get comfortable using various ggplot parameters to make a figure. You will upload the final figure you create (a .png file) as your homework. 
+
+1. Load packages: tidyverse, ggthemes, scales, cowplot, viridis
+```{r}
+
+```
+
+2. Import data: 3-class3 > data > input > data_subset.csv
+```{r}
+
+```
+
+3. Using ggplot2, make the following plots sequentially, adding one layer at a time:
+  A) Histogram of log10(count+10) (geom_histogram)
+```{r}
+
+```
+  B) Change the theme of the plot above to something we haven't used in class [ggthemes](https://yutannihilation.github.io/allYourFigureAreBelongToUs/ggthemes/)
+```{r}
+
+```
+  C) To the above plot, add an informative title, x-axis label and y-axis label
+```{r}
+
+```
+  D) Color the histograms blue (geom_histogram(fill = "blue"))
+```{r}
+
+```
+  E) Add facet wrap to the above plot to create separate panel for the four time points (facet_wrap(~time))
+```{r}
+
+```
+  F) Using facet_grid(), create a grid of panels with time vs. target_status
+```{r}
+
+```
+  G) Using plot_grid(), collect plots (D-F) into a single figure in one row. 
+```{r}
+
+```
+
+4.  Save the figure above (G) into a .png file and upload the png file as your homework.   
+```{r}
+
+```

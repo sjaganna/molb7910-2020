@@ -1,0 +1,268 @@
+---
+title: "class3-workbook"
+author: "Sujatha Jagannathan"
+date: "2/27/2020"
+output: html_document
+---
+
+## Load packages: tidyverse, ggthemes, scales, cowplot, viridis
+
+```{r setup}
+library(tidyverse) # data-wrangling + ggplot2
+library(ggthemes) # pretty plotting themes
+library(scales) # nice annotating of x/y axes in plots
+library(cowplot) # to make panels of plots
+library(viridis) # nice colors!
+```
+
+## No need to `setwd()`. But check with `getwd()`
+```{r}
+getwd()
+```
+
+## Import data
+```{r}
+data_gene_level <- read_csv("data/input/data_gene_level.csv")
+rp_genes <- read_csv("data/input/rp_genes.csv")
+target_genes <- read_csv("data/input/target_genes.csv")
+```
+
+## Add DUX4 target status using `ifelse()`
+```{r}
+# if-else clause within mutate
+data <- data_gene_level %>%
+          mutate(target_status = 
+                ifelse(hgnc_symbol %in% target_genes$hgnc_symbol, 
+                       "target", "non-target"))
+```
+
+## Example: making a plot step-by-step
+
+```{r}
+# initialize with data
+ggplot(data)
+
+# specify x and y axes
+ggplot(data, aes(x = time, y = count))
+# specify geometry
+ggplot(data, aes(x = time, y = count)) + 
+  geom_boxplot()
+
+```
+
+## transform data within ggplot
+```{r}
+ggplot(data, aes(x = time, y = log10(count))) + 
+  geom_boxplot()
+
+# add pseudocount of 10
+ggplot(data, aes(x = time, y = log10(count+10))) + 
+  geom_boxplot()
+```
+
+## Preserving the order of samples
+```{r}
+data$time <- factor(data$time, 
+                    levels = c("0h", "4h", "8h", "14h"))
+
+# let's try the plot again...
+ggplot(data, aes(x = time, y = log10(count+10))) + 
+  geom_boxplot()
+```
+
+## changing the theme
+```{r}
+p <- ggplot(data, aes(x = time, y = log10(count+10))) + 
+  geom_boxplot()
+
+# theme_few
+p + theme_few()
+# theme_minimal
+p + theme_minimal()
+# theme_wsj
+p + theme_wsj()
+
+```
+
+## Adding plot title
+```{r}
+p + theme_few() + ggtitle("DUX4 time course")
+```
+
+## Modifying axis labels
+```{r}
+p + 
+  theme_few() + 
+  ggtitle("DUX4 time course") + 
+  ylab("RNA-seq read counts") + 
+  xlab("Time of DUX4 expression")
+```
+
+## Let's explore other geometries - jitter plot
+
+```{r}
+p <- ggplot(data, 
+            aes(x = time, y = log10(count+10))) + 
+  theme_few() + 
+  ggtitle("DUX4 time course") + 
+  ylab("RNA-seq read counts") + 
+  xlab("Time of DUX4 expression")
+
+# geom_point
+
+p + geom_point()
+
+# let's jitter the points
+p + geom_point(position = "jitter")
+# let's make the points more transparent
+p + geom_point(position = "jitter", 
+               alpha = 0.01, 
+               color = "red")
+```
+
+## Let's explore other geometries - violin plot
+
+```{r}
+# geom_violin
+p + geom_violin() + geom_point()
+# let's jitter the points
+
+```
+
+## let's make a histogram
+```{r}
+# geom_histogram
+ggplot(data, aes(log10(count+ 10))) + geom_histogram(fill = "#ffeeee")
+
+# why can't I do this?
+hist(log10(data$count+10))
+
+# you can, while exploring data. ggplot is better to make figures since it gives you easy control of the aesthetics. 
+```
+
+## let's go back to box plot
+```{r}
+p <- ggplot(data, aes(x = time, y = log10(count+10))) +  
+  theme_few() + 
+  ggtitle("DUX4 time course") + 
+  ylab(label = "RNA-seq read counts") + 
+  xlab(label = "Hours of DUX4 expression")  
+
+p + geom_boxplot()
+```
+
+## now let's play with color
+```{r}
+# changing the outline and fill color
+p + geom_boxplot(color = "black", fill = "red", cex = 2)
+```
+
+## what if you want to color by another variable?
+```{r}
+# add a `fill` to your aesthetic
+p <- ggplot(data, aes(x = time, y = log10(count+10), fill = time)) +  
+  theme_few() + 
+  ggtitle("DUX4 time course") + 
+  ylab(label = "RNA-seq read counts") + 
+  xlab(label = "Hours of DUX4 expression") 
+
+p + geom_boxplot()
+```
+
+## plotting by different groups
+```{r}
+# fill by target_status
+p <- ggplot(data, aes(x = time, y = log10(count+10), fill = target_status)) +  
+  theme_few() + 
+  ggtitle("DUX4 time course") + 
+  ylab(label = "RNA-seq read counts") + 
+  xlab(label = "Hours of DUX4 expression") 
+
+# change up x and fill
+p <- ggplot(data, aes(x = target_status, y = log10(count+10), fill = time)) +  
+  theme_few() + 
+  ggtitle("DUX4 time course") + 
+  ylab(label = "RNA-seq read counts") + 
+  xlab(label = "Hours of DUX4 expression") 
+
+p + geom_boxplot()
+```
+
+## default colors are boring
+```{r}
+# use viridis
+p_new <-
+p + geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, begin = .2, end = .8) 
+
+p_new
+
+
+```
+
+## What else can ggplot do?
+
+A LOT more! Before we go into that, let's look under the hood of a ggplot object. 
+
+```{r}
+#let's save our plot as an object
+plot <-
+p + geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, begin = .2, end = .8) 
+
+```
+
+## what is facet? 
+
+```{r}
+# `facet_wrap` time
+plot + facet_wrap(~time)
+# `facet_wrap` target_status
+plot + facet_wrap(~target_status)
+# `facet_wrap` replicate
+plot + facet_wrap(~replicate)
+# `facet_wrap` multiple variables
+plot + facet_wrap(time~replicate)
+# `facet_grid` 
+plot + facet_grid(time~replicate)
+
+# let's fix x-axis
+
+```
+
+## How to combine multiple plots into a figure?
+```{r}
+# plot1
+plot1 <- plot + facet_wrap(~time)
+
+# plot2 
+plot2 <- plot + facet_wrap(~replicate)
+
+# Now let's make a figure!
+plot_final <- plot_grid(plot1, plot2, 
+                        labels = c("A", "B"),
+                        nrow = 2)
+```
+
+## Saving plots
+```{r}
+save_plot(filename = "images/dux4_expression_time.png", 
+          plot = plot1, 
+          base_width = 6, 
+          base_height = 4)
+
+save_plot(filename = "images/dux4_expression_replicate.png", 
+          plot = plot2, 
+          base_width = 6, 
+          base_height = 4)
+
+save_plot(filename = "images/final_figure.png", 
+          plot = plot_final, 
+          base_width = 6, 
+          base_height = 4)
+```
+
+## session information
+```{r}
+sessionInfo()
+```

@@ -2,7 +2,8 @@
 title: "class3-presentation"
 author: "Sujatha Jagannathan"
 date: "February 28, 2019"
-output: html_document
+output: ioslides_presentation
+
 ---
 
 ```{r include=FALSE}
@@ -18,8 +19,7 @@ options(scipen=999)  # turn off scientific notation like 1e+06
 
 ## Load packages
 
-```{r setup,echo=FALSE, message=FALSE}
-
+```{}
 # We need to load all the libraries we think are needed for this exercise.
 library(tidyverse) # data-wrangling + ggplot2
 library(ggthemes) # pretty plotting themes
@@ -29,28 +29,34 @@ library(viridis) # nice colors!
 ```
 
 ## Set working directory
-```{}
-No need to do this today because we are going to try something new. Please open the `class3-workbook.Rmd` from the `3-class3` folder you just downloaded. The default behavior of Rstudio is to consider the folder that contains a .Rmd document as the working directory. We are going to take advantage of this and see if this fixes our knitting and file path issues. All relative paths we will use today will be with respect to the `3-class3` folder that contains the .Rmd file. 
-```
+
+- No need to do this today because we are going to try something new. 
+- Please open the `class3-workbook.Rmd` from the `3-class3` folder you just downloaded. 
+- The default behavior of Rstudio is to consider the folder that contains a .Rmd document as the working directory. 
+- We are going to take advantage of this and see if this fixes our knitting and file path issues. 
+- All relative paths we will use today will be with respect to the `3-class3` folder that contains the .Rmd file. 
 
 ## Import data
-```{r}
+```{}
 data_gene_level <- read_csv("data/input/data_gene_level.csv")
 rp_genes <- read_csv("data/input/rp_genes.csv")
 target_genes <- read_csv("data/input/target_genes.csv")
 ```
 
 ## Add DUX4 target status
-```{r}
+```{}
 # if-else clause within mutate
 data <- data_gene_level %>%
           mutate(target_status = 
-                ifelse(hgnc_symbol %in% target_genes$hgnc_symbol, "target", "non-target"))
+                ifelse(hgnc_symbol %in% target_genes$hgnc_symbol, 
+                "target", "non-target"))
 ```
 
 ## 1. Plotting data with ggplot2 
 
-A popular approach to plotting in R is [ggplot2](https://ggplot2.tidyverse.org/). While graphs produced using ggplot2 defaults are (imo) not quite publication qualitym with a few tweaks you can pretty much get there! I find [STHDA](http://www.sthda.com/english/wiki/be-awesome-in-ggplot2-a-practical-guide-to-be-highly-effective-r-software-and-data-visualization) to be a great resource for `ggplot2` and many other `R` coding questions.
+A popular approach to plotting in R is [ggplot2](https://ggplot2.tidyverse.org/). While graphs produced using ggplot2 defaults are not quite publication quality, with a few tweaks you can pretty much get there! 
+
+I find [STHDA](http://www.sthda.com/english/wiki/be-awesome-in-ggplot2-a-practical-guide-to-be-highly-effective-r-software-and-data-visualization) to be a great resource for `ggplot2` and many other `R` coding questions.
 
 ## The basic syntax of `ggplot()`  
 
@@ -68,9 +74,8 @@ __geometry__: specify type of plots  - histogram, boxplot, line, density, dotplo
 
 
 ## Example: making a plot step-by-step
-We will make a variety of box plots now. Please see this [webpage](http://www.sthda.com/english/wiki/ggplot2-stripchart-jitter-quick-start-guide-r-software-and-data-visualization) for more information.
 
-```{r}
+```{}
 # initialize with data
 ggplot(data) # specify which dataframe to use - no plot yet
 
@@ -83,200 +88,179 @@ ggplot(data, aes(x = time, y = count)) +
 ```
 
 ## transform data within ggplot
-```{r}
-# first method
+```{}
 ggplot(data, aes(x = time, y = log10(count))) +  
   geom_boxplot() 
 
-# second method
-ggplot(data, aes(x = time, y = count)) +  
-  geom_boxplot() +
-  scale_y_log10() # make y-axis log10
-
 # add pseudocount of 10
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() # make y-axis log10
+ggplot(data, aes(x = time, y = log10(count+10))) +  
+  geom_boxplot() 
 ```
 
 ## Preserving the order of samples
-```{r}
+```{}
 data$time <- factor(data$time, levels = c("0h", "4h", "8h", "14h"))
 
 # let's try the plot again...
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() # make y-axis log10
+ggplot(data, aes(x = time, y = log10(count+10))) +  
+  geom_boxplot() 
 ```
 
 ## changing the theme
-```{r}
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() + 
-  theme_few() # fewer lines
 
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() + 
-  theme_minimal() # Minimal
+There are a lot of themes to choose from within `ggthemes`. You can take a look at this [quick guide](https://yutannihilation.github.io/allYourFigureAreBelongToUs/ggthemes/)
+```{}
+p <- ggplot(data, aes(x = time, y = log10(count+10))) +  
+  geom_boxplot()
 
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() + 
-  theme_fivethirtyeight() # Nate Silver + Co.
+p + theme_few() # fewer lines
+
+p + theme_minimal() # Minimal
+
+p + theme_wsj() # Wall Street Journal
+```
+
+## You can also customize pre-existing themes
+
+```{}
+mytheme <- theme_minimal(base_size = 15) + 
+                theme(aspect.ratio = 1, 
+                      panel.background = 
+                          element_rect(
+                              colour = "black", 
+                              size=1))
+
+p + mytheme
 ```
 
 ## Adding plot title
-```{r}
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() +
-  theme_few() +
+```{}
+p + theme_few() +
   ggtitle("DUX4 time course") # title
 ```
 
 ## Modifying axis labels
-```{r}
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() + 
-  theme_few() + 
+```{}
+p + theme_few() + 
   ggtitle("DUX4 time course") + 
   ylab(label = "RNA-seq read counts") + # my new y-axis name
   xlab(label = "Hours of DUX4 expression")  # my new x-axis name
-
 ```
 
 ## Let's explore other geometries - jitter plot
 
-```{r}
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_point() +
-  scale_y_log10() + 
+```{}
+p <- ggplot(data, aes(x = time, y = log10(count+10))) +  
   theme_few() + 
   ggtitle("DUX4 time course") + 
   ylab(label = "RNA-seq read counts") + 
   xlab(label = "Hours of DUX4 expression")  
+  
+p + geom_point()
+```
 
-# let's jitter the points
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_point(position = "jitter") +
-  scale_y_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression") 
+## let's jitter the points
+```{}
+p + geom_point(position = "jitter")
+```
 
-# let's make the points more transparent
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_point(position = "jitter", alpha = 0.01) +
-  scale_y_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression")  
+## let's make the points more transparent
+```{}
+p + geom_point(position = "jitter", alpha = 0.01)
 ```
 
 ## Let's explore other geometries - violin plot
 
-```{r}
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_violin() +
-  scale_y_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression")  
+```{}
+p + geom_violin() 
+```
 
-# let's jitter the points
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_violin() +
-  geom_point(position = "jitter", alpha = 0.01) +
-  scale_y_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression")  
+## let's jitter the points
+```{}
+p + geom_violin() +
+  geom_point(position = "jitter", alpha = 0.01) 
 ```
 
 ## let's make a histogram
-```{r}
-ggplot(data, aes(count+10)) +  # only one variable specified
-  geom_histogram() + # histogram
-  scale_x_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "Frequency") + 
-  xlab(label = "log10(count+10")  
-
-# why can't I do this?
-hist(log10(data$count+10))
-
-# you can, while exploring data. ggplot is better to make figures since it gives you easy control of the aesthetics. 
-```
-
-## let's go back to box plot
-```{r}
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot() +
-  scale_y_log10() + 
+```{}
+p <- ggplot(data, aes(log10(count+10))) +  
   theme_few() + 
   ggtitle("DUX4 time course") + 
   ylab(label = "RNA-seq read counts") + 
   xlab(label = "Hours of DUX4 expression")  
+
+p + geom_histogram() # histogram
+```
+
+## why can't I just do this?
+`hist(log10(data$count+10))`
+
+you can, while exploring data. ggplot is better to make figures since it gives you easy control of the aesthetics. 
+
+
+## let's go back to box plot
+```{}
+p <- ggplot(data, aes(x = time, y = log10(count+10))) +  
+  theme_few() + 
+  ggtitle("DUX4 time course") + 
+  ylab(label = "RNA-seq read counts") + 
+  xlab(label = "Hours of DUX4 expression")  
+  
+p + geom_boxplot()
 ```
 
 ## now let's play with color
-```{r}
-ggplot(data, aes(x = time, y = count+10)) +  
-  geom_boxplot(color = "black", fill = "red") + # changing the outline and fill color
-  scale_y_log10() + 
+```{}
+# changing the outline and fill color
+p + geom_boxplot(color = "black", fill = "red")  
+
+```
+
+## what if you want to color by another variable?
+```{}
+p <- ggplot(data, aes(
+                  x = time, 
+                  y = log10(count+10), 
+                  fill = replicate)) +  
   theme_few() + 
   ggtitle("DUX4 time course") + 
   ylab(label = "RNA-seq read counts") + 
   xlab(label = "Hours of DUX4 expression")  
-```
-
-## what if you want to color by another variable?
-```{r}
-ggplot(data, aes(x = time, y = count+10, fill = replicate)) +  
-  geom_boxplot() + 
-  scale_y_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression")
+  
+p + geom_boxplot()
 ```
 
 ## plotting by different groups
-```{r}
-ggplot(data, aes(x = replicate, y = count+10, fill = time)) +  
-  geom_boxplot() + 
-  scale_y_log10() + 
+```{}
+p <- ggplot(data, aes(
+                  x = time, 
+                  y = log10(count+10), 
+                  fill = target_status)) +  
   theme_few() + 
   ggtitle("DUX4 time course") + 
   ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression")
+  xlab(label = "Hours of DUX4 expression")  
+  
+p + geom_boxplot()
+```
 
-ggplot(data, aes(x = target_status, y = count+10, fill = time)) +  
-  geom_boxplot() + 
-  scale_y_log10() + 
+## plotting by different groups
+```{}
+p <- ggplot(data, aes(
+                  x = target_status, 
+                  y = log10(count+10), 
+                  fill = time)) +  
   theme_few() + 
   ggtitle("DUX4 time course") + 
   ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression")
+  xlab(label = "Hours of DUX4 expression")  
+  
+p + geom_boxplot()
 ```
 
 ## default colors are boring
-```{r}
-ggplot(data, aes(x = target_status, y = count+10, fill = time)) +  
-  geom_boxplot() + 
-  scale_y_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression") + 
+```{}
+p + geom_boxplot() + 
   scale_fill_viridis(discrete = TRUE) 
 ```
 
@@ -284,17 +268,13 @@ ggplot(data, aes(x = target_status, y = count+10, fill = time)) +
 
 A LOT more! Before we go into that, let's look under the hood of a ggplot object. 
 
-```{r round two jitter}
-#instead of plotting directly, let's save our plot as an object
-plot <- ggplot(data, aes(x = target_status, y = count+10, fill = time)) +  
-  geom_boxplot() + 
-  scale_y_log10() + 
-  theme_few() + 
-  ggtitle("DUX4 time course") + 
-  ylab(label = "RNA-seq read counts") + 
-  xlab(label = "Hours of DUX4 expression") + 
+```{}
+plot <- p + geom_boxplot() + 
   scale_fill_viridis(discrete = TRUE) 
+```
 
+## 
+```{}
 plot # prints plot
 names(plot) # what is in the object?
 plot$data # i can get the data back
@@ -304,37 +284,49 @@ plot$facet
 ```
 
 ## what is facet? 
-let's say I want to make a separate `p_target`  plot for each gene
 
-```{r}
+```{}
 plot + facet_wrap(~time) # `facet_wrap` time
 plot + facet_wrap(~target_status) # `facet_wrap` target_status
 plot + facet_wrap(~replicate) # `facet_wrap` replicate
+plot + facet_wrap(time ~ replicate) # `facet_wrap` multiple
+plot + facet_grid(time ~ replicate) # `facet_grid` 
 
 # let's fix x-axis
-plot + facet_wrap(~replicate) + 
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) # angle 60 degree
+plot + facet_grid(time ~ replicate) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
+  # angle 60 degree
 ```
 
 ## How to combine multiple plots into a figure?
-```{r}
+```{}
 plot1 <- plot + facet_wrap(~time)
 plot2 <- plot + facet_wrap(~replicate) + 
-  theme(axis.text.x = element_text(angle = 60, hjust = 1)) # angle 60 degree
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
 
-# Now we make a figure!
+# Now let's make a figure!
 plot_final <- plot_grid(plot1, plot2, labels = c("A","B"), nrow = 2)
 
 plot_final
 ```
+More information on using plot_grid (from package `cowplot`) is [here](https://wilkelab.org/cowplot/articles/plot_grid.html)
 
 ## Saving plots
-```{r}
-save_plot(filename = "images/dux4_time_course_target.png", plot = plot1, base_width = 6, base_height = 4)
+```{}
+save_plot(filename = "images/dux4_time_course_target.png", 
+          plot = plot1, 
+          base_width = 6, 
+          base_height = 4)
 
-save_plot(filename = "images/dux4_time_course_replicate.png", plot = plot2, base_width = 6, base_height = 4)
+save_plot(filename = "images/dux4_time_course_replicate.png", 
+          plot = plot2, 
+          base_width = 6, 
+          base_height = 4)
 
-save_plot(filename = "images/figure2.png", plot = plot_final, base_width = 8, base_height = 8)
+save_plot(filename = "images/figure2.png", 
+          plot = plot_final, 
+          base_width = 8, 
+          base_height = 8)
 ```
 
 ## session information
