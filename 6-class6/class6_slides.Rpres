@@ -1,0 +1,358 @@
+K-Means clustering and Random sampling
+========================================================
+author: Neel Mukherjee
+date: March 5, 2020
+autosize: true
+transition: rotate
+font-family: 'Arial'
+
+
+
+```{r install packages, echo=F}
+# all packages I'll need today
+packages_needed <- c("tidyverse",  "ggplot2", "ggthemes", "ggrepel", "scales", "viridis","pheatmap"
+                     )
+# figure out which ones I do NOT have installed
+
+packages_new <- packages_needed[
+  !(packages_needed %in% installed.packages()[,"Package"])
+  ]
+
+# install only packages I do NOT have installed
+if( length(packages_new) )
+  { install.packages(packages_new) }
+
+```
+
+```{r libraries, echo=F}
+# Load all the libraries needed for this exercise.
+library(tidyverse) # data-warngling
+library(reshape2) # transforming data
+library(ggplot2) # plotting
+library(ggthemes) # pretty plotting themes
+library(ggrepel) # spread data point labels
+library(scales) # annotating axes in plots
+library(viridis) # nice color pallete
+library(pheatmap)
+
+# BiocManager::install("GeneOverlap")
+library(GeneOverlap)
+
+```
+
+
+```{r import data, echo=F}
+# get data
+data_genelevel <- readr::read_tsv(file = "data/data_genelevel.tsv")
+
+# get dux targets
+dux_targets <- read_csv("data/target_genes.csv")
+  
+```
+
+
+```{r tidying, echo=F}
+# In a new column named 'target',
+# if the gene is a DUX4 target,
+# TREU write  "target"
+# FALSE write  "not_target"
+data_genelevel$target <- if_else(condition = data_genelevel$gene_symbol %in% dux_targets$hgnc_symbol,
+                                 true = "target",
+                                 false = "not_target"
+                                 )
+
+```
+
+
+Part 1: Clustering
+========================================================
+incremental: true
+
+We use clustering to identify distinct patterns within our data.
+
+Here is an example of gene expression response over time:
+
+![](https://www.mathworks.com/help/examples/bioinfo/win64/yeastdemo_05.png)
+
+
+
+K-Means clustering
+========================================================
+incremental: true 
+
+Goal:
+to partition `n` observations into `k` clusters in which each observation belongs to the cluster with the nearest mean, serving as a prototype of the cluster.
+--Wiki
+
+__K-means__
+<iframe width="300" height="150" src="https://www.youtube.com/embed/4b5d3muPQmA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+K-Means data preparation
+========================================================
+incremental: true 
+
+1. Rows are observations (individuals) and columns are variables
+2. Any missing value in the data must be removed or estimated.
+3. The data must be standardized (i.e., scaled) to make variables comparable. 
+
+Scaling or z-score
+========================================================
+incremental: true 
+
+![](http://www.z-table.com/uploads/2/1/7/9/21795380/1426878678.png) 
+
+$x$ = observation  
+$\mu$ = population mean  
+$\sigma$ = population sd  
+
+We will be using this function on each row.  
+This will allow comparison of relative changes accross the row for all rows.
+
+R for loop
+========================================================
+incremental: true 
+
+
+
+We will write a `for` loop to calculate the standard deviation of each row in a matrix.
+
+R for loop example
+========================================================
+
+```{r for time}
+sd(data_genelevel[1, 2:13]) # std  of row 1, and col 2:13
+
+mySds <- vector() # create empty vector
+
+for (i in 1:nrow(data_genelevel)) {
+  mySds[i] <- sd(data_genelevel[i, 2:13])
+}
+
+data_genelevel[mySds == 0,"gene_symbol"]
+
+```
+
+
+Filter data
+========================================================
+
+```{r filt}
+filtData <- data_genelevel %>%
+  filter(gene_symbol !="ISCA1")
+```
+
+Log transform
+========================================================
+
+```{r transform}
+clustData <- filtData %>% 
+  select_if(is.numeric) %>%
+  mutate_all(funs(log10(1 + .))) %>%
+  as.matrix()
+
+rownames(clustData) <- filtData$gene_symbol
+```
+
+Scale data
+========================================================
+
+```{r row scale}
+s_clustData <- t(scale(t(clustData))) 
+# scale fxn on columns so we scale the transpose and then transpose it back
+
+```
+
+
+K-Means clustering
+========================================================
+incremental: true 
+
+1. Computing k-means clustering in R (pheatmap)
+2. Determine appropriate cluster number
+3. Add new column with cluster number to initial data
+
+Let's cluster with k=3
+========================================================
+incremental: false 
+
+```{r kmeans}
+ph3 <- pheatmap(mat = s_clustData,
+         kmeans_k = 3,
+         cluster_cols = F,
+         scale = "none")
+
+```
+
+How do we figure out the optimal # clusters?
+========================================================
+incremental: true 
+
+There are many methods, but we will stick with the "elbow" method.
+
+K-means is minimizing the total within cluster sum of squares (wss).
+
+
+We pick the cluster where that drop in total reaches diminishing returns -> the elbow.
+
+Functions in R
+========================================================
+
+![](https://www.learnbyexample.org/wp-content/uploads/r/r-for-loop-syntax.png)
+
+
+
+Our first function
+========================================================
+```{r wss fxn}
+
+wss <- function(knum, data2clust) {
+  ph <- pheatmap(mat = data2clust, kmeans_k = knum, scale = "none", cluster_cols = F, silent = T)
+  ph$kmeans$tot.withinss
+}
+
+```
+
+Try function
+========================================================
+
+```{r}
+wss(knum = 2, data2clust = s_clustData)
+```
+
+
+Calculate wss for k = 2:10
+========================================================
+
+We need to write a for loop using our fxn wss() that will iterate from k =2 to k = 10. 
+
+Then we can see how the wss decreases with more clusters and where the "elbow" is -> our optimal cluster number.
+
+
+Combine for loop and function
+========================================================
+
+```{r for and function, eval=T}
+k2test <- 2:10
+clustInfo <- data.frame(k=integer(), wss=double())
+set.seed(42)
+for (i in k2test) {
+  clustInfo[i,1] <- i
+  clustInfo[i,2] <- wss(knum = i,data2clust = s_clustData)
+}
+clustInfo
+```
+
+Find that elbow
+========================================================
+```{r plot}
+
+plot(clustInfo$k, clustInfo$wss,
+       type="b", pch = 19, frame = FALSE, 
+       xlab="Number of clusters K",
+       ylab="Total within-clusters sum of squares")
+
+```
+
+Clearly the elbow is at 6 :)
+========================================================
+```{r final cluster}
+
+myClust <- pheatmap(mat = s_clustData, kmeans_k = 6, cluster_cols = F, color = viridis(20))
+
+```
+
+Join with original data
+========================================================
+
+```{r join with original}
+
+myClustData <- data.frame(Cluster=myClust$kmeans$cluster,
+                gene_symbol=names(myClust$kmeans$cluster)
+                )
+
+myHappyData <- left_join(filtData, myClustData, by="gene_symbol") %>% as.data.frame()
+
+```
+
+5 minute break
+========================================================
+
+Part 2: Random sampling
+========================================================
+
+Which cluster contains DUX4 targets?
+```{r}
+myClust
+```
+
+
+Use GeneOverlap package
+========================================================
+
+```{r gene overlap and lists}
+# list of genes by dux4 targeting
+duxTargetsList <- split(myHappyData$gene_symbol, myHappyData$target)
+
+# list of genes by clustering
+geneClustList <- split(myHappyData$gene_symbol, as.factor(myHappyData$Cluster))
+
+# calculate all overlaps between lists
+gom.duxClust <- newGOM(duxTargetsList, geneClustList, genome.size = nrow(filtData))
+
+# extract overlaps
+duxClust <- getMatrix(gom.duxClust, "intersection")
+
+```
+
+My money's on...
+========================================================
+
+```{r who overlaps}
+duxClust <- t(data.frame(duxClust))
+
+duxClust <- duxClust %>% as.tibble %>% mutate(percent = 100*target/(not_target + target), total = not_target + target)
+
+duxClust$clust <- seq(1,6,1)
+bestClust <- duxClust %>% arrange(-percent) %>% slice(1L) %>% pull(clust)
+
+```
+
+Which cluster was that?
+========================================================
+```{r}
+myClust
+```
+
+
+Is this overlap significant?
+========================================================
+
+We wil learn how to estimate an empirical p-value using [random sampling](https://www.khanacademy.org/math/ap-statistics/tests-significance-ap/idea-significance-tests/v/estimating-p-value-from-simulation).
+
+Calculate relevant numbers
+========================================================
+
+```{r empirical p-value}
+# fraction of targets in enriched cluster
+dux_bestCluster <- myHappyData %>% filter(Cluster==bestClust) %>% group_by(target) %>% tally() %>%  slice(2L) %>% pull(n)
+dux_bestCluster
+
+clustSize <- duxClust %>% filter(clust==bestClust) %>% pull(total)
+
+# randomly sample clustSize, # dux targets?
+sample_n(tbl = myHappyData, size = clustSize) %>% group_by(target) %>% tally() %>% slice(2L) %>% pull(n)
+
+```
+
+For loop time again!
+========================================================
+```{r for the win loop}
+# lets sample 1000 times!
+dux_Number <- vector()
+for (i in 1:1000) {
+dux_Number[i] <- sample_n(tbl = myHappyData, size = clustSize) %>% group_by(target) %>% tally() %>% slice(2L) %>% pull(n)
+}
+
+table(dux_Number >= dux_bestCluster)
+
+```

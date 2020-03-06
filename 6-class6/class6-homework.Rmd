@@ -1,0 +1,60 @@
+---
+title: "Homework"
+author: "Neelanjan Mukherjee"
+date: ""
+output: html_document
+---
+
+Please execute the following tasks, knit the resulting .Rmd (Lastname_class4-homework.Rmd) and submit the .html output as your assignment.
+
+You will need to import the following data:  
+* `data_gene-level.tsv`. (Files: data > input > data_gene-level.tsv)  
+* `target_genes.csv` file provided (Files: data > input > target_genes.csv)  
+
+# Part 1
+## __Perform k-means clustering just like in class__
+### Show the following use an r chuck for each
+1. Prepare data properly
+```{r}
+
+```
+
+2. Row scale
+```{r}
+
+```
+
+3. Determine appropriate # clusters
+```{r}
+
+```
+
+### Here's where things change
+
+4. Determine if the cluster most enriched for "non_targets"
+```{r}
+
+```
+
+5. Calculate empirical "non_targets" in that cluster
+```{r}
+
+```
+
+6. Print session info
+```{r session info}
+
+# print r session information
+
+```
+
+# Part 2
+
+## submit an idea for a project
+Describe to us the following:
+1. Input data
+2. Questions you will ask
+
+FOr executing the project consider framing it like the diagram below.
+![](https://d33wubrfki0l68.cloudfront.net/571b056757d68e6df81a3e3853f54d3c76ad6efc/32d37/diagrams/data-science.png)
+

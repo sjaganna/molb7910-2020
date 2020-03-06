@@ -1,0 +1,130 @@
+---
+title: "class6_workbook"
+author: "Neelanjan Mukherjee"
+date: "3/5/2020"
+output: html_document
+---
+
+```{r install packages, echo=F}
+# all packages I'll need today
+packages_needed <- c("tidyverse",  "ggplot2", "ggthemes", "ggrepel", "scales", "viridis","pheatmap"
+                     )
+# figure out which ones I do NOT have installed
+
+packages_new <- packages_needed[
+  !(packages_needed %in% installed.packages()[,"Package"])
+  ]
+
+# install only packages I do NOT have installed
+if( length(packages_new) )
+  { install.packages(packages_new) }
+
+```
+
+```{r libraries, echo=F}
+# Load all the libraries needed for this exercise.
+library(tidyverse) # data-warngling
+library(reshape2) # transforming data
+library(ggplot2) # plotting
+library(ggthemes) # pretty plotting themes
+library(ggrepel) # spread data point labels
+library(scales) # annotating axes in plots
+library(viridis) # nice color pallete
+library(pheatmap)
+
+# BiocManager::install("GeneOverlap")
+library(GeneOverlap)
+
+```
+
+
+```{r import data}
+# get data
+data_genelevel <- readr::read_tsv(file = "data/data_genelevel.tsv")
+
+# get dux targets
+dux_targets <- read_csv("data/target_genes.csv")
+  
+```
+
+
+```{r tidying}
+# In a new column named 'target',
+# if the gene is a DUX4 target,
+# TREU write  "target"
+# FALSE write  "not_target"
+data_genelevel$target <- if_else(condition = data_genelevel$gene_symbol %in% dux_targets$hgnc_symbol,
+                                 true = "target",
+                                 false = "not_target"
+                                 )
+
+```
+
+
+
+## For loop time
+```{r for time}
+
+```
+
+
+# Filter, Transform, and Scale
+```{r filt-tansform-scale}
+
+```
+
+
+# Clustering
+```{r kmeans}
+
+```
+
+# Figure out K
+
+## write function
+
+```{r function}
+
+
+```
+
+## for loop and function
+```{r for loop function}
+
+```
+
+## get that elbow 
+```{r plot}
+
+```
+
+## final clusters and join
+```{r final cluster join}
+
+
+```
+
+# 5 min BREAK
+# random sampling
+
+## Which cluster contains DUX4 targets?
+
+```{r gene overlap and lists}
+
+
+```
+
+## Random sampling empirical p-value
+```{r empirical p-value}
+
+
+
+
+```
+
+
+```{r}
+sessionInfo()
+```
+
+
