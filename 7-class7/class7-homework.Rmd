@@ -1,0 +1,53 @@
+---
+title: "Homework Class 7"
+author: "Neelanjan Mukherjee"
+date: "03/08/2020"
+output: html_document
+---
+<br/>
+
+The goal of this homework is to perform analysis of genomic data. 
+
+Please execute the following tasks, knit the resulting .Rmd (Lastname_class7-homework.Rmd) and submit the .html output as your assignment.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE, eval = TRUE)
+```
+
+<br/>
+
+#### Load packages 
+
+```{r, include = TRUE}
+#load packages here
+
+```
+
+<br/>
+
+## Answer the following questions
+### Examine HuR binding sequence specificity
+#### What sequences does HuR preferentially bind to in introns vs intronic background?
+
+Perform the same analysis on introns that was performed in 3' UTRs in class.
+
+
+```{r intron seqs}
+
+# get intron sequences
+# get  sequences of hur binding sites in introns
+# count 6 mer frequencies in both
+# plot the difference in 6mer freq between intronic hur bound seqs and intron seqs
+# name top 3 enriched 6mers
+
+
+```
+
+
+
+#### Session info
+Finally, we will __always__ end our Rmarkdown documents with the sessing information:
+
+```{r}
+# session info
+```

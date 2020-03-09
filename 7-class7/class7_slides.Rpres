@@ -1,0 +1,414 @@
+Genomic analysis: Pt I
+========================================================
+author: Neel Mukherjee
+date: March 5, 2020
+autosize: true
+transition: rotate
+font-family: 'Arial'
+
+
+
+Goal:
+========================================================
+incremental: false
+
+Integrate genomic datasets.
+
+Perform analysis on genomic sequences.
+
+But first some background...
+
+
+
+mature mRNA regulatory decisions
+========================================================
+incremental: false
+
+![Mayya and Duchaine](https://www.frontiersin.org/files/Articles/423825/fgene-10-00006-HTML-r1/image_m/fgene-10-00006-g001.jpg)
+
+
+
+
+RNA-binding proteins 
+========================================================
+incremental: false
+
+ELAVL1/HuR is an essential RNA-binding protein (RBP). HuR binds to AU-rich elements (ARE) in 3’ UTRs of mRNAs to promote mRNA stability and translation. 
+
+```{r hur info, echo=F, fig.align='center'}
+knitr::include_graphics("images/hur_mechanism.png", dpi = 200)
+```
+
+
+Mapping RBP-RNA interaction sites: PAR-CLIP
+========================================================
+incremental: false
+
+
+<div align="center">
+<img src="images/CLIPseq.png" width=400 height=600>
+</div>
+
+
+
+Hypothesis:
+========================================================
+
+*HuR binds to AU-rich elements in the 3' UTR of mRNAs to promote stability.*
+
+Our datasets:
+1. HuR-RNA binding sites (PAR-CLIP) in human cell lines (hg19)  
+2. HuR vs scramble siRNA KD RNA-seq data
+
+
+Questions:
+========================================================
+incremental: true
+
+Where in mRNA does HuR bind mRNA?
+Which regions are enriched for HuR binding?
+
+
+What sequences does HuR bind to?
+Are those sequences enriched for HuR binding compared to background?    
+
+Does HuR promote the stability of its mRNA targets?
+Does the region or number of HuR binding influence stabilization?
+
+
+
+```{r libraries, echo=F}
+# Load all the libraries needed for this exercise.
+library(tidyverse) # data-warngling
+library(ggplot2) # plotting
+library(ggthemes) # pretty plotting themes
+library(ggrepel) # spread data point labels
+library(scales) # annotating axes in plots
+library(viridis) # nice color pallete
+library(GenomicFeatures) # operations on gtf
+library(GenomicRanges) # operation on genomic intervals
+library(Biostrings) # sequence analysis
+library(seqLogo) # motif logo
+library(BSgenome.Hsapiens.UCSC.hg19) # genomic sequence
+
+# if (!requireNamespace("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# 
+# BiocManager::install("GenomicFeatures")
+
+
+# library(rtracklayer)
+# library(AnnotationDbi)
+# library(DT)
+# library(Hmisc) # cut2
+# library(reshape2) # transforming data
+```
+
+
+
+HuR PAR-CLIP data: import
+========================================================
+incremental: false
+
+Read in data
+```{r import data}
+# get data
+hur_parclip <- read_tsv("data/SRR248532_clusters.tsv.zip")
+  
+```
+
+
+HuR PAR-CLIP data: import
+========================================================
+incremental: false
+
+For the purpose of this exercise we will be focus on mRNAs to keep it simple.
+
+```{r tidying clip}
+# modify 5'UTR to get rid of " ' "
+hur_parclip$Aligned.to <- gsub(pattern = "5'utr", replacement =  "utr5", x =  hur_parclip$Aligned.to)
+
+# same for 3'UTR
+hur_parclip$Aligned.to <- gsub("3'utr", "utr3", hur_parclip$Aligned.to)
+```
+
+A bit of simple EDA
+========================================================
+incremental: false
+
+Let's look at the HuR binding sites sizes:
+
+```{r site dist}
+ggplot(data=hur_parclip %>% filter(Aligned.to=="utr3"), aes(x=width)) +
+  geom_histogram(bins = 50)
+
+```
+
+HuR PAR-CLIP data: annotation
+========================================================
+incremental: false
+
+
+```{r binding annotation}
+# annotation categories that HuR binds to
+binding_regions_all <- hur_parclip %>% 
+  count(Aligned.to) %>%
+  arrange(desc(n)) %>%
+  mutate(freq=n/sum(n))
+
+binding_regions_all
+
+```
+
+HuR PAR-CLIP data: pie chart
+========================================================
+incremental: false
+
+```{r pie}
+
+ggplot(binding_regions_all, aes(x="", y=n, fill=Aligned.to)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0)
+
+```
+
+Too many categories
+========================================================
+incremental: false
+
+```{r tidy more}
+mRNA_regions <- c("utr5","coding","intron", "utr3")
+hur_parclip %>% 
+  filter(Aligned.to %in% mRNA_regions) %>%
+  count(Aligned.to) %>% 
+  summarise(fraction_mRNA=sum(n)/nrow(hur_parclip))
+
+hur_parclip_mRNA <- hur_parclip %>% 
+  filter(Aligned.to %in% mRNA_regions) 
+
+binding_regions_mRNA <- hur_parclip_mRNA %>%
+  count(Aligned.to) %>%
+  arrange(desc(n)) %>%
+  mutate(freq=n/sum(n))
+```
+
+
+HuR PAR-CLIP data: pie chart 2
+========================================================
+incremental: false
+
+```{r pie again}
+ggplot(binding_regions_mRNA, aes(x="", y=n, fill=Aligned.to)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y") + xlab("") + ylab("HuR sites")
+  theme(axis.text.x=element_blank())
+
+```
+
+
+
+```{r, intron utr n, echo=F}
+intron_utr_hursites <- binding_regions_mRNA[1,2]/binding_regions_mRNA[2,2]
+
+intron_utr_hursites <- round(intron_utr_hursites, digits = 2)
+
+```
+
+Which regions are enriched for HuR binding?
+========================================================
+incremental: true
+
+The majority of HuR mRNA binding sites are in introns and 3' UTRs. 
+
+About 3/4 of HuR binding sites are in introns and 1/4 in 3' UTRs.
+
+There are `r intron_utr_hursites`x more binding sites in intron vs 3' UTR. This would suggest that HuR preferentially binds to introns. However introns are much longer than 3' UTRs. 
+
+So if the average intron is 3x longer than the average 3'UTR - then HuR would exhibit similar binding preference. 
+
+
+
+
+
+Let's figure out the length of introns and 3' UTRs.
+========================================================
+incremental: false
+
+We need a gtf file with [gene/transcript models](https://www.gencodegenes.org/human/release_19.html).
+
+
+```{r txdb, echo=T, eval=T}
+# if (!file.exists("data/gencodev19.sqlite")) {
+#   txdb <- makeTxDbFromGFF("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz", format="gtf")
+#   saveDb(txdb,file="data/gencodev19.sqlite")
+# }
+
+# BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene")
+library("TxDb.Hsapiens.UCSC.hg19.knownGene")
+txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene #shorthand
+```
+
+
+I LIED - only doing 3' UTRs...
+========================================================
+incremental: true
+
+```{r, utrs}
+utr3  <- threeUTRsByTranscript(txdb)
+utr3 <- GenomicRanges::reduce(unlist(utr3))
+mean(width(utr3))
+
+```
+
+
+```{r, hidden, echo=FALSE}
+introns <- intronsByTranscript(txdb)
+introns <- GenomicRanges::reduce(unlist(introns))
+
+mean_iu <- mean(width(introns)) / mean(width(utr3))
+mean_iu <- round(mean_iu, digits = 2)
+
+intron_utr3_sum <- sum(width(introns))/sum(width(utr3))
+intron_utr3_sum <- round(intron_utr3_sum, digits = 1)
+
+
+```
+
+However...
+========================================================
+incremental: true
+
+Remember, there are `r intron_utr_hursites`x more binding sites in intron vs 3' UTR. 
+
+
+The mean intron length is `r mean_iu`x longer than mean 3' UTR length.
+
+
+Therefore, based on mean region length HuR is `r round(mean_iu/intron_utr_hursites, digits = 2)`x more likely to bind in 3' UTRs than introns.
+
+
+5 Minute Break
+========================================================
+incremental: true
+
+
+What sequences does HuR bind to?
+========================================================
+incremental: false
+
+We are going to restrict our analysis to the 3'UTR binding sites for class.
+
+
+```{r, hur utr stringset}
+hur_utr3 <- hur_parclip %>% filter(Aligned.to=="utr3")
+
+# make DNAStringSet
+hur_string <- DNAStringSet(hur_utr3$ClusterSequence)
+names(hur_string) <- hur_utr3$Aligned.to
+
+```
+
+
+HuR 6mer binding frequencies
+========================================================
+incremental: false
+
+
+```{r, df strings}
+hur_6mer <- data.frame(
+  count=oligonucleotideFrequency(x = unlist(hur_string), width = 6)
+  )
+
+hur_6mer$nuc <- rownames(hur_6mer) # make new column 6mer
+hur_6mer$freq <- hur_6mer$count/sum(hur_6mer$count) # calc freq
+hur_6mer$freq_rand <- hur_6mer$freq/(1/4096) # vs uniform
+hur_6mer <- hur_6mer %>% arrange(desc(count))
+
+```
+
+What sequences does HuR bind to?
+========================================================
+incremental: false
+
+So we now know that HuR really likes UUUUUU - perhaps even better than it likes AU-rich elements! 
+
+
+```{r good 6mers}
+hur_6mer %>% filter(freq_rand > 30)
+```
+
+
+Visualize sequence motif
+========================================================
+incremental: false
+
+```{r }
+hur_string_20 <- DNAStringSet(hur_string, start = 5, end = 15) # only keeping the nts 5-15
+letter_counts <- consensusMatrix(hur_string_20)
+probs <- prop.table(letter_counts[1:4,], 2)
+
+seqLogo(probs, ic.scale = F)
+
+
+
+```
+
+Are those sequences enriched for HuR binding compared to background?
+========================================================
+incremental: false
+
+But we need to normalize for the frequency of these sequences in 3' UTRs. For this task we need to retrieve the sequences 3' UTRs.
+
+
+How to get genomic sequences
+========================================================
+incremental: false
+
+```{r}
+library(BSgenome.Hsapiens.UCSC.hg19)
+threeUTR_seqs <- getSeq(BSgenome.Hsapiens.UCSC.hg19, utr3)
+
+threeUTR_seqs <- DNAStringSet(unlist(threeUTR_seqs))
+
+```
+
+Calculate 6mer counts and frequencies in 3'UTRs
+========================================================
+incremental: false
+
+```{r}
+utr3_6mer <- data.frame(countUTRs=oligonucleotideFrequency(x = unlist(threeUTR_seqs), width = 6, as.prob = F))
+utr3_6mer$utrfreqs <- utr3_6mer$count/sum(utr3_6mer$count)
+utr3_6mer$nuc <- rownames(utr3_6mer)
+
+my_6mer <- left_join(hur_6mer, utr3_6mer, by = "nuc")
+my_6mer$freq_utr <- my_6mer$freq/my_6mer$utrfreqs
+
+```
+
+Make a plot
+========================================================
+incremental: false
+
+```{r plot seq prefs}
+p_6mer <- ggplot(data = my_6mer, aes(y = freq, x = utrfreqs)) +
+  geom_point(color = ifelse(my_6mer$freq_utr > 7, "red", "black")) +
+  theme_few() + ylab("HuR 3'UTR site 6mers") + xlab("3'UTR 6mers") +
+  geom_abline(intercept = 0, slope = 1) +
+  geom_text_repel(aes(label=ifelse(my_6mer$freq_utr > 7, 
+                             my_6mer$nuc,
+                             "")))
+  
+```
+
+
+Take a look
+========================================================
+incremental: false
+
+```{r}
+
+p_6mer
+
+```
+

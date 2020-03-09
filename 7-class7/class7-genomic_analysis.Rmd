@@ -1,0 +1,103 @@
+---
+title: "Class 6: Genomic Analysis Pt I"
+author: "Neelanjan Mukherjee"
+date: "03/06/2019"
+output: html_document
+---
+
+
+
+```{r libraries, echo=F}
+# Load all the libraries needed for this exercise.
+
+# library(rtracklayer)
+# library(AnnotationDbi)
+# library(DT)
+# library(Hmisc) # cut2
+# library(reshape2) # transforming data
+```
+
+
+### A. Examine HuR binding site patterns
+#### Where does HuR bind?
+
+
+
+```{r hur binding data}
+
+
+
+```
+
+
+
+
+#### Which regions are enriched for HuR binding?
+
+```{r introns 3utrs}
+
+if (!file.exists("data/gencodev19.sqlite")) {
+
+  txdb <- makeTxDbFromGFF("ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz", format="gtf")
+  
+  saveDb(txdb, file="data/gencodev19.sqlite")
+}
+# BiocManager::install("TxDb.Hsapiens.UCSC.hg19.knownGene")
+# library("TxDb.Hsapiens.UCSC.hg19.knownGene")
+# txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene #shorthand (for convenience)
+
+
+
+introns <- intronsByTranscript(txdb)
+introns <- GenomicRanges::reduce(unlist(introns))
+
+utr3  <- threeUTRsByTranscript(txdb)
+utr3 <- GenomicRanges::reduce(unlist(utr3))
+
+
+summary(width(utr3))
+summary(width(introns))
+
+intron_utr3_median <- median(width(introns)) / median(width(utr3))
+intron_utr3_median <- round(intron_utr3_median, digits = 2)
+
+intron_utr3_sum <- sum(width(introns))/sum(width(utr3))
+intron_utr3_sum <- round(intron_utr3_sum, digits = 1)
+
+
+```
+
+
+The median intron length is `r intron_utr3_median`x longer than median 3' UTR length. Therefore, based on median region length HuR is `r round(intron_utr3_median/intron_utr_hursites)`x more likely to bind in 3' UTRs than introns.
+
+There is `r intron_utr3_sum`x more intronic nucleotides than 3' UTR nucleotides. Therefore, based on total region length HuR is `r round(intron_utr3_sum/intron_utr_hursites)`x more likely to bind in 3' UTRs than introns.
+
+### B. Examine HuR binding sequence specificity
+#### What sequences does HuR bind to?
+
+```{r hur binding sequence}
+
+
+```
+
+But we need to normalize for the frequency of these sequences in 3' UTRs and introns. For this task we need to retrieve the sequences for introns and 3' UTRs.
+
+#### Are those sequences enriched for HuR binding compared to background?    
+
+```{r 3utr seqs}
+
+
+
+```
+
+
+## For homework determine which 6mers are detected at a higher frequency in intronic HuR binding sites compared to their frequency in introns. If your computer is struggling, just use ~2000 introns.
+
+
+Finally, we will __always__ end our Rmarkdown documents with the sessing information:
+
+```{r}
+sessionInfo()
+```
+
+
