@@ -1,0 +1,89 @@
+---
+title: "class8_workbook"
+author: "Neelanjan Mukherjee"
+date: "3/11/2020"
+output: html_document
+---
+
+
+```{r libraries, echo=F}
+# Load all the libraries needed for this exercise.
+
+```
+
+
+```{r import data}
+# HuR Binding sites
+
+
+# HuR siRNA knockdown data
+
+
+# gene information
+
+
+```
+
+
+We will create a new tible in which the PAR-CLIP is summarized by gene
+```{r tidy parclip}
+# change genename to symbol
+
+
+# modify 5'UTR to get rid of " ' "
+
+
+# same for 3'UTR
+
+
+# count number of binding sites per mRNA region per gene
+
+
+# convert all NA to 0
+
+
+# add categorical "region" indicating binding combinations of intron + 3'UTR
+
+
+
+```
+
+
+We need to prepare the siRNA data and join with the PAR-CLIP data
+```{r tidy siRNA}
+
+
+```
+
+
+Does HuR promote the stability of its mRNA targets?
+
+Does the region of HuR binding influence stabilization?
+
+```{r stablity by region}
+
+
+
+```
+
+
+Does the number of HuR binding influence stabilization?
+
+```{r stability by numbers}
+# let's make bins for UTR
+
+
+
+# let's make bins for UTR
+
+
+
+
+```
+
+
+```{r}
+sessionInfo()
+```
+
+

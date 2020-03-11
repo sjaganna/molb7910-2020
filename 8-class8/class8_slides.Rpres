@@ -1,0 +1,266 @@
+Integrating datasets
+========================================================
+author: Neel Mukherjee
+date: March 11, 2020
+autosize: true
+transition: rotate
+font-family: 'Arial'
+
+
+
+Goal:
+========================================================
+incremental: false
+
+Integrate genomic datasets.
+
+But first...a reminder!
+
+
+
+mature mRNA regulatory decisions
+========================================================
+incremental: false
+
+![Mayya and Duchaine](https://www.frontiersin.org/files/Articles/423825/fgene-10-00006-HTML-r1/image_m/fgene-10-00006-g001.jpg)
+
+
+
+
+RNA-binding proteins 
+========================================================
+incremental: false
+
+ELAVL1/HuR is an essential RNA-binding protein (RBP). HuR binds to AU-rich elements (ARE) in 3’ UTRs of mRNAs to promote mRNA stability and translation. 
+
+```{r hur info, echo=F, fig.align='center'}
+knitr::include_graphics("images/hur_mechanism.png", dpi = 200)
+```
+
+
+Mapping RBP-RNA interaction sites: PAR-CLIP
+========================================================
+incremental: false
+
+
+<div align="center">
+<img src="images/CLIPseq.png" width=400 height=600>
+</div>
+
+
+
+Hypothesis:
+========================================================
+
+*HuR binds to AU-rich elements in the 3' UTR of mRNAs to promote stability.*
+
+Our datasets:
+1. HuR-RNA binding sites (PAR-CLIP) in human cell lines (hg19)  
+2. HuR vs scramble siRNA KD RNA-seq data
+
+
+Questions:
+========================================================
+incremental: true
+
+Does HuR promote the stability of its mRNA targets?
+
+Does the region of HuR binding influence stabilization?
+
+Does the number of HuR binding influence stabilization?
+
+
+
+Load libraries
+========================================================
+
+```{r libraries, echo=T}
+# Load all the libraries needed for this exercise.
+library(tidyverse) # data-wrangling
+library(ggplot2) # plotting
+library(ggthemes) # pretty plotting themes
+library(scales) # annotating axes in plots
+library(viridis) # nice color pallete
+library(Hmisc) # cut2 function
+
+```
+
+Import data
+========================================================
+
+```{r import data}
+# HuR Binding sites
+hur_parclip <- read_tsv("data/SRR248532_clusters.tsv.zip")
+
+
+# HuR siRNA knockdown data
+hur_siRNA <- load("data/HuR.R")
+
+# gene information
+gene_info <- read_csv("data/geneInfo.csv.zip")
+
+```
+
+Tidy CLIP, stupid stuff
+========================================================
+
+```{r}
+# change genename to symbol
+names(hur_parclip)[7] <- "Symbol"
+
+# modify 5'UTR to get rid of " ' "
+hur_parclip$Aligned.to <- gsub(pattern = "5'utr", replacement =  "utr5", x =  hur_parclip$Aligned.to)
+
+# same for 3'UTR
+hur_parclip$Aligned.to <- gsub("3'utr", "utr3", hur_parclip$Aligned.to)
+
+```
+
+
+Tidy CLIP, summarize
+========================================================
+```{r}
+mRNA_regions <- c("utr5","coding","intron", "utr3")
+
+# count number of binding sites per mRNA region per gene
+hur_mRNA_gene <- hur_parclip %>% 
+  filter(Aligned.to %in% mRNA_regions) %>% 
+  group_by(Symbol, Aligned.to) %>% 
+  tally() %>% 
+  pivot_wider(names_from = Aligned.to, values_from = n )
+
+# convert all NA to 0
+hur_mRNA_gene[is.na(hur_mRNA_gene)] <- 0
+
+```
+
+Tidy CLIP, summarize categorical
+========================================================
+```{r}
+# add categorical "region" indicating binding combinations of intron + 3'UTR
+hur_mRNA_gene <- hur_mRNA_gene %>%
+  mutate(region=
+    ifelse(
+      test = intron > 0 & utr3 > 0, # intron and utr3
+      yes =  "intron_utr3",
+      no = ifelse(
+        test = intron > 0 & utr3 == 0, # intron, no utr3
+        yes = "intron",
+        no = ifelse(
+          test =  intron == 0 & utr3 > 0, # no intron, utr3
+          yes = "utr3",
+          no = "other" # all others
+          )
+        )
+      )
+    )
+```
+
+Tidy siRNA data: prep for join
+========================================================
+
+```{r}
+HuR$Gene <- rownames(HuR) # new column gene ids
+
+HuR <- left_join(gene_info[c(2,11)],HuR, by="Gene") # Symbol
+
+keep <- log10(1+rowSums(HuR[,3:6])) > 1 # filter
+HuRfilt <- HuR[keep,-1] # filter
+
+```
+
+Join CLIP + siRNA data
+========================================================
+
+```{r}
+#join kd and clip data
+kd_clip <- left_join(HuRfilt, hur_mRNA_gene,  by = "Symbol") 
+
+# Make all NA in region "not_target"
+kd_clip$region[is.na(kd_clip$region)] <- "not_target"
+
+kd_clip[is.na(kd_clip)] <- 0 # convert all NA to 0
+
+kd_clip$region <- relevel(x = as.factor(kd_clip$region), ref = "not_target")
+```
+
+Back to our questions:
+========================================================
+incremental: true
+
+Does HuR promote the stability of its mRNA targets?
+
+Does the region of HuR binding influence stabilization?
+
+Does the number of HuR binding influence stabilization?
+
+Let's calculate changes in expression upon HuR KD
+========================================================
+```{r}
+# calc lfc gfp sirna vs hur sirna for mature and primary RNA
+kd_clip <- kd_clip %>% mutate(lfc_mature= log2(Mature_siGFP) - log2(Mature_siHuR),
+                              lfc_primary= log2(Primary_siGFP) - log2(Primary_siHuR)
+                              )
+```
+
+
+Binding region and stability mature mRNA
+========================================================
+
+```{r}
+ggplot(data = kd_clip, aes(x = lfc_mature, color = region)) +
+  stat_ecdf() +
+  xlim(-2,2) +
+  theme_few() +
+  ylab("cumulative fraction") +
+  xlab("mature: GFP - HuR") +
+  scale_color_manual(values = c("darkgrey",viridis(4, end = .9)))
+
+```
+
+
+Binding region and stability primary mRNA
+========================================================
+
+```{r}
+ggplot(data = kd_clip, aes(x = lfc_primary, color = region)) +
+  stat_ecdf() +
+  xlim(-2,2) +
+  theme_few() +
+  ylab("cumulative fraction") +
+  xlab("primary: GFP - HuR") +
+  scale_color_manual(values = c("darkgrey",viridis(4, end = .9)))
+```
+
+Does the number of HuR binding influence stabilization?
+========================================================
+
+First we need to bin regions based on the number of binding sites.
+
+```{r}
+kd_clip$utr3_bin <- cut2(x = kd_clip$utr3, c(0,1,2,4,8,1000))
+
+kd_clip$utr3_bin <- recode_factor(kd_clip$utr3_bin,
+               "   0" = "0",
+               "   1" = "1",
+               "[   2,   4)" = "2-4",
+               "[   4,   8)" = "4-8",
+               "[   8,1000]" = "8+"
+               )
+
+```
+
+Does the number of HuR binding influence stabilization?
+========================================================
+```{r}
+
+ggplot(data = kd_clip, aes(x = lfc_mature, color = utr3_bin)) +
+  stat_ecdf() +
+  xlim(-2,2) +
+  theme_few() +
+  ylab("cumulative fraction") +
+  xlab("mature: GFP - HuR") +
+  scale_color_manual(values = c("darkgrey",viridis(4, end = .9)))
+
+```
+
